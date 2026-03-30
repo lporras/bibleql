@@ -14,5 +14,5 @@ Rails.application.routes.draw do
   # get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
 
   get "playground", to: "playground#show"
-  root "playground#show"
+  root "home#index"
 end
