@@ -13,7 +13,7 @@ module Types
     end
 
     def book_name
-      object.book.name
+      BookName.find_by(translation_id: object.translation_id, book_id: object.book_id)&.name || object.book.name
     end
 
     def verse

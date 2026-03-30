@@ -29,6 +29,8 @@ class BibleImporter
       create_book_names(translation, books_data, book_records)
       import_verses(translation, bible, book_records)
     end
+  rescue => e
+    puts "  ERROR: #{e.message} (#{e.class})"
   end
 
   def self.import_all(directory: "db/open-bibles")
@@ -36,7 +38,8 @@ class BibleImporter
       identifier = File.basename(file_path).sub(/\.(usfx|osis|zefania)\.xml$/i, "")
       puts "Importing #{identifier}..."
       new(file_path: file_path).import!
-      puts "  Done. Verses: #{Translation.find_by(identifier: identifier)&.verses&.count || 0}"
+      count = Translation.find_by(identifier: identifier)&.verses&.count || 0
+      puts "  Done. Verses: #{count}" if count > 0
     end
   end
 
@@ -99,6 +102,7 @@ class BibleImporter
 
     bible.each_verse do |verse|
       next unless CANONICAL_BOOK_IDS.include?(verse.book_id)
+      next if verse.text.nil? || verse.text.strip.empty?
 
       book_record = book_records[verse.book_id]
       next unless book_record
