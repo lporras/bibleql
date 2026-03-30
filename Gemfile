@@ -22,6 +22,8 @@ gem "bible_parser"
 gem "bible_ref"
 # GraphQL API [https://graphql-ruby.org]
 gem "graphql", "~> 2.5"
+# CORS support for GraphQL API [https://github.com/cyu/rack-cors]
+gem "rack-cors"
 
 # Use Active Model has_secure_password [https://guides.rubyonrails.org/active_model_basics.html#securepassword]
 # gem "bcrypt", "~> 3.1.7"

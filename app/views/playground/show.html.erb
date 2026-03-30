@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BibleQL — API Playground</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/graphiql@3.8.3/graphiql.min.css">
+  <style>
+    body { margin: 0; height: 100vh; }
+    #graphiql { height: 100vh; }
+  </style>
+</head>
+<body>
+  <div id="graphiql"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/react@18.3.1/umd/react.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/graphiql@3.8.3/graphiql.min.js"></script>
+
+  <script>
+    const fetcher = GraphiQL.createFetcher({
+      url: <%= raw graphql_url.to_json %>,
+    });
+
+    const defaultQuery = `# Welcome to BibleQL API Playground!
+#
+# A GraphQL API for querying Bible verses and passages
+# across 43 translations in 31 languages.
+#
+# Supported reference formats:
+#   "John 3:16"              \u2014 single verse
+#   "John 3:16-18"           \u2014 verse range
+#   "Matthew 25:31-33,46"    \u2014 multiple ranges
+#   "Genesis 1"              \u2014 full chapter
+#   "Mateo 28:18-20"         \u2014 localized book names
+#
+# Try the examples below! Uncomment one block at a time.
+
+# \u2014 1. Look up a passage
+{
+  passage(translation: "eng-web", reference: "John 3:16") {
+    reference
+    text
+    translationName
+    translationNote
+    verses {
+      bookId
+      bookName
+      chapter
+      verse
+      text
+    }
+  }
+}
+
+# \u2014 2. Look up a passage in Spanish
+# {
+#   passage(translation: "spa-bes", reference: "Mateo 28:18-20") {
+#     reference
+#     text
+#     translationName
+#     verses { bookName chapter verse text }
+#   }
+# }
+
+# \u2014 3. Look up multiple verse ranges
+# {
+#   passage(reference: "Matthew 25:31-33,46") {
+#     reference
+#     text
+#     verses { chapter verse text }
+#   }
+# }
+
+# \u2014 4. Get a full chapter
+# {
+#   chapter(book: "GEN", chapter: 1) {
+#     bookName
+#     chapter
+#     verse
+#     text
+#   }
+# }
+
+# \u2014 5. Get a single verse
+# {
+#   verse(book: "JHN", chapter: 3, verse: 16) {
+#     bookName
+#     chapter
+#     verse
+#     text
+#   }
+# }
+
+# \u2014 6. Search verses by text
+# {
+#   search(query: "love", limit: 10) {
+#     bookName
+#     chapter
+#     verse
+#     text
+#   }
+# }
+
+# \u2014 7. List all available translations
+# {
+#   translations {
+#     identifier
+#     name
+#     language
+#   }
+# }
+
+# \u2014 8. List all 66 canonical books
+# {
+#   books {
+#     bookId
+#     name
+#     testament
+#     position
+#   }
+# }
+`;
+
+    ReactDOM.render(
+      React.createElement(GraphiQL, {
+        fetcher: fetcher,
+        defaultQuery: defaultQuery,
+      }),
+      document.getElementById('graphiql'),
+    );
+  </script>
+</body>
+</html>
