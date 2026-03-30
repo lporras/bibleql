@@ -10,7 +10,7 @@ namespace :bible do
   end
 
   desc "Import a single Bible translation, e.g. rake bible:import_one[eng-web]"
-  task :import_one, [:identifier] => :environment do |_t, args|
+  task :import_one, [ :identifier ] => :environment do |_t, args|
     identifier = args[:identifier]
     abort "Usage: rake bible:import_one[eng-web]" unless identifier
 

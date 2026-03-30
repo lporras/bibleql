@@ -8,7 +8,7 @@ class CreateBookNames < ActiveRecord::Migration[8.1]
       t.timestamps
     end
 
-    add_index :book_names, [:translation_id, :book_id], unique: true
-    add_index :book_names, [:translation_id, :name]
+    add_index :book_names, [ :translation_id, :book_id ], unique: true
+    add_index :book_names, [ :translation_id, :name ]
   end
 end

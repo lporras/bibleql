@@ -10,9 +10,9 @@ class CreateVerses < ActiveRecord::Migration[8.1]
       t.timestamps
     end
 
-    add_index :verses, [:translation_id, :book_id, :chapter, :verse_number],
+    add_index :verses, [ :translation_id, :book_id, :chapter, :verse_number ],
               unique: true, name: "index_verses_uniqueness"
-    add_index :verses, [:translation_id, :book_id, :chapter],
+    add_index :verses, [ :translation_id, :book_id, :chapter ],
               name: "index_verses_on_translation_book_chapter"
   end
 end

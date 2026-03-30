@@ -10,21 +10,21 @@ module Types
       context.schema.object_from_id(id, context)
     end
 
-    field :nodes, [Types::NodeType, null: true], null: true, description: "Fetches a list of objects given a list of IDs." do
-      argument :ids, [ID], required: true, description: "IDs of the objects."
+    field :nodes, [ Types::NodeType, null: true ], null: true, description: "Fetches a list of objects given a list of IDs." do
+      argument :ids, [ ID ], required: true, description: "IDs of the objects."
     end
 
     def nodes(ids:)
       ids.map { |id| context.schema.object_from_id(id, context) }
     end
 
-    field :translations, [Types::TranslationType], null: false,
+    field :translations, [ Types::TranslationType ], null: false,
       description: "List all available Bible translations"
     def translations
       Translation.order(:identifier)
     end
 
-    field :books, [Types::BookType], null: false,
+    field :books, [ Types::BookType ], null: false,
       description: "List all canonical books in order"
     def books
       Book.order(:position)
@@ -41,7 +41,7 @@ module Types
       PassageLookup.new(translation_identifier: translation, reference: reference).call
     end
 
-    field :chapter, [Types::VerseType], null: false,
+    field :chapter, [ Types::VerseType ], null: false,
       description: "Get all verses in a chapter" do
       argument :translation, String, required: false, default_value: "eng-web"
       argument :book, String, required: true, description: "Book ID (e.g. 'MAT') or localized name (e.g. 'Mateo')"
@@ -69,7 +69,7 @@ module Types
         .find_by!(translation: t, book: book_record, chapter: chapter, verse_number: verse)
     end
 
-    field :search, [Types::VerseType], null: false,
+    field :search, [ Types::VerseType ], null: false,
       description: "Search verses by text content" do
       argument :translation, String, required: false, default_value: "eng-web"
       argument :query, String, required: true
@@ -81,7 +81,7 @@ module Types
         .where(translation: t)
         .where("text ILIKE ?", "%#{Verse.sanitize_sql_like(query)}%")
         .order(:book_id, :chapter, :verse_number)
-        .limit([limit, 100].min)
+        .limit([ limit, 100 ].min)
     end
 
     private
