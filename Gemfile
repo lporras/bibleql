@@ -20,6 +20,8 @@ gem "jbuilder"
 gem "bible_parser"
 # Parse Bible reference strings [https://github.com/seven1m/bible_ref]
 gem "bible_ref"
+# GraphQL API [https://graphql-ruby.org]
+gem "graphql", "~> 2.5"
 
 # Use Active Model has_secure_password [https://guides.rubyonrails.org/active_model_basics.html#securepassword]
 # gem "bcrypt", "~> 3.1.7"
