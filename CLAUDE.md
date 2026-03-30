@@ -4,7 +4,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-BibleQL is a Rails 8.1 application using Ruby 4.0, PostgreSQL, and RSpec for testing. The project is in its early stages (initial scaffold).
+BibleQL is a GraphQL API for querying Bible verses and passages across multiple translations. Built with Rails 8.1, Ruby 4.0, PostgreSQL, and RSpec for testing. The project is in its early stages (initial scaffold).
+
+### Goals
+
+- Provide a GraphQL endpoint to query Bible verses and passages
+- Support multiple Bible translations
+- Enable flexible queries by book, chapter, verse, and passage ranges
 
 ## Common Commands
 
