@@ -36,7 +36,7 @@ class BibleqlSchema < GraphQL::Schema
   # Limit the size of incoming queries:
   max_query_string_tokens(5000)
   max_depth(15)
-  max_complexity(200)
+  max_complexity(300)
 
   # Stop validating when it encounters this many errors:
   validate_max_errors(100)
