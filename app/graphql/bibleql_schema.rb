@@ -15,6 +15,9 @@ class BibleqlSchema < GraphQL::Schema
   # For batch-loading (see https://graphql-ruby.org/dataloader/overview.html)
   use GraphQL::Dataloader
 
+  # Disable introspection in production to prevent schema exposure
+  disable_introspection_entry_points unless Rails.env.development?
+
   # GraphQL-Ruby calls this when something goes wrong while running a query:
   def self.type_error(err, context)
     # if err.is_a?(GraphQL::InvalidNullError)
@@ -33,6 +36,8 @@ class BibleqlSchema < GraphQL::Schema
 
   # Limit the size of incoming queries:
   max_query_string_tokens(5000)
+  max_depth(15)
+  max_complexity(200)
 
   # Stop validating when it encounters this many errors:
   validate_max_errors(100)
