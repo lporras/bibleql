@@ -32,6 +32,9 @@ bin/rails server
 # GraphiQL IDE (development only)
 # Visit http://localhost:3000/graphiql
 
+# Playground (all environments)
+# Visit http://localhost:3000/playground
+
 # Run all tests
 bundle exec rspec
 
@@ -71,8 +74,9 @@ bundle exec rake api_keys:list
 ## Architecture
 
 - **Framework**: Rails 8.1 (API + standard views via Hotwire/Turbo/Stimulus)
-- **GraphQL**: graphql-ruby gem with GraphiQL IDE in development
+- **GraphQL**: graphql-ruby gem (v2.5) with GraphiQL IDE in development; max_complexity: 300, max_depth: 15
 - **Database**: PostgreSQL with Solid Cache, Solid Queue, and Solid Cable for production
+- **CORS**: Enabled for `/graphql` endpoint (origins: "*")
 - **Bible Data**: open-bibles git submodule (db/open-bibles/) parsed via bible_parser gem
 - **Reference Parsing**: bible_ref gem + localized book name fallback
 - **Asset Pipeline**: Propshaft with import maps (no Node.js bundler); Sprockets coexists for ActiveAdmin assets
@@ -80,8 +84,11 @@ bundle exec rake api_keys:list
 - **Rate Limiting**: rack-attack (100 req/min per IP, 1000 req/day per API key)
 - **Admin Panel**: ActiveAdmin at /admin (Devise auth for AdminUser)
 - **Testing**: RSpec (not Minitest) with Capybara/Selenium for system tests
-- **Deployment**: Docker + Kamal
+- **Deployment**: Docker + Kamal; hosted on Render (bibleql-rails.onrender.com)
+- **CI/CD**: GitHub Actions (Brakeman, Bundler Audit, Importmap Audit, RuboCop, RSpec)
 - **Linting**: rubocop-rails-omakase style guide
+- **Email**: Resend API for transactional emails (API key approval/rejection notifications)
+- **Playground**: Public GraphQL playground at `/playground` (CDN-hosted GraphiQL v3.8.3)
 
 ## Key Models
 
@@ -106,6 +113,7 @@ bundle exec rake api_keys:list
 
 - **BibleImporter** (`app/services/bible_importer.rb`) — Imports Bible translations from XML files using bible_parser
 - **PassageLookup** (`app/services/passage_lookup.rb`) — Resolves Bible references (supports both English and localized book names)
+- **ApiKeyMailer** (`app/mailers/api_key_mailer.rb`) — Sends approval/rejection emails via Resend
 
 ## Authentication
 
