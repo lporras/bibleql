@@ -28,6 +28,8 @@ gem "graphql", "~> 2.5"
 gem "rack-cors"
 # Rate limiting middleware [https://github.com/rack/rack-attack]
 gem "rack-attack"
+# Resend email delivery [https://resend.com/docs/send-with-ruby-on-rails]
+gem "resend"
 # Admin panel [https://activeadmin.info]
 gem "activeadmin"
 gem "activeadmin_assets"
