@@ -15,8 +15,7 @@ class BibleqlSchema < GraphQL::Schema
   # For batch-loading (see https://graphql-ruby.org/dataloader/overview.html)
   use GraphQL::Dataloader
 
-  # Disable introspection in production to prevent schema exposure
-  disable_introspection_entry_points unless Rails.env.development?
+  # Introspection is available in all environments (API key authentication protects the endpoint)
 
   # GraphQL-Ruby calls this when something goes wrong while running a query:
   def self.type_error(err, context)
