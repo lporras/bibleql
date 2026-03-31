@@ -18,6 +18,11 @@ Rack::Attack.throttle("graphql/api_key", limit: 1000, period: 1.day) do |req|
   end
 end
 
+# Throttle API key request form: 5 submissions per hour per IP
+Rack::Attack.throttle("api_key_requests/ip", limit: 5, period: 1.hour) do |req|
+  req.ip if req.path.start_with?("/api-keys/request") && req.post?
+end
+
 # Safelist health check
 Rack::Attack.safelist("health_check") do |req|
   req.path == "/up" && req.get?
