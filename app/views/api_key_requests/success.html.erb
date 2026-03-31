@@ -1,0 +1,20 @@
+<% content_for(:title, "Request Submitted — BibleQL") %>
+
+<div class="max-w-lg mx-auto py-16 text-center">
+  <div class="rounded-full bg-green-100 w-16 h-16 flex items-center justify-center mx-auto">
+    <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+    </svg>
+  </div>
+
+  <h1 class="mt-6 text-3xl font-bold text-gray-900">Request Submitted</h1>
+  <p class="mt-4 text-gray-600">
+    Your API key request has been submitted successfully. We'll review it and send your key to
+    <strong><%= @email %></strong> once approved.
+  </p>
+
+  <div class="mt-8">
+    <%= link_to "Back to Home", root_path,
+      class: "rounded-lg border border-gray-300 px-6 py-3 text-gray-700 font-semibold hover:bg-gray-50 transition" %>
+  </div>
+</div>

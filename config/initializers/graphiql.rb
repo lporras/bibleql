@@ -1,6 +1,10 @@
 # frozen_string_literal: true
 
 if Rails.env.development?
+  GraphiQL::Rails.config.headers = {
+    "Authorization" => "Bearer YOUR_API_KEY"
+  }
+
   GraphiQL::Rails.config.initial_query = <<~GQL
     # Welcome to BibleQL API Playground!
     #

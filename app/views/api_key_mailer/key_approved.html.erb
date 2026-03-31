@@ -1,0 +1,35 @@
+<h1>Your BibleQL API Key is Ready</h1>
+
+<p>Hi <%= @api_key_request.name %>,</p>
+
+<p>Your API key request has been approved. Here is your key:</p>
+
+<p style="font-family: monospace; font-size: 16px; background: #f3f4f6; padding: 12px; border-radius: 8px;">
+  <%= @token %>
+</p>
+
+<p><strong>Important:</strong> Save this key securely. It will not be shown again.</p>
+
+<h2>How to use it</h2>
+
+<p>Include the key in the <code>Authorization</code> header of your requests:</p>
+
+<pre style="background: #f3f4f6; padding: 12px; border-radius: 8px;">
+Authorization: Bearer <%= @token %>
+</pre>
+
+<h2>Example</h2>
+
+<% base_url = ActionMailer::Base.default_url_options[:host] %>
+<% port = ActionMailer::Base.default_url_options[:port] %>
+<% scheme = port == 443 ? "https" : (Rails.env.production? ? "https" : "http") %>
+<% domain = port && port != 80 && port != 443 ? "#{scheme}://#{base_url}:#{port}" : "#{scheme}://#{base_url}" %>
+
+<pre style="background: #f3f4f6; padding: 12px; border-radius: 8px;">
+curl -X POST <%= domain %>/graphql \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <%= @token %>" \
+  -d '{"query": "{ translations { identifier name } }"}'
+</pre>
+
+<p>Happy coding!</p>
