@@ -122,10 +122,16 @@
 # }
 `;
 
+    const defaultHeaders = JSON.stringify({
+      "Authorization": "Bearer YOUR_API_KEY"
+    }, null, 2);
+
     ReactDOM.render(
       React.createElement(GraphiQL, {
         fetcher: fetcher,
         defaultQuery: defaultQuery,
+        defaultHeaders: defaultHeaders,
+        headerEditorEnabled: true,
       }),
       document.getElementById('graphiql'),
     );

@@ -1,6 +1,8 @@
 require "rails_helper"
 
 RSpec.describe "GraphQL Queries", type: :request do
+  let(:api_key) { create(:api_key, environment: "test") }
+  let(:headers) { auth_headers(api_key.token) }
   let(:translation) { create(:translation, identifier: "eng-web", name: "World English Bible", language: "eng") }
   let(:book) { create(:book, book_id: "GEN", name: "Genesis", testament: "OT", position: 1) }
 
@@ -17,7 +19,7 @@ RSpec.describe "GraphQL Queries", type: :request do
   describe "chapter query" do
     it "returns all verses in a chapter" do
       query = '{ chapter(book: "GEN", chapter: 1) { bookId chapter verse text } }'
-      post "/graphql", params: { query: query }
+      post "/graphql", params: { query: query }, headers: headers
 
       data = JSON.parse(response.body)["data"]["chapter"]
       expect(data.size).to eq(3)
@@ -31,7 +33,7 @@ RSpec.describe "GraphQL Queries", type: :request do
       create(:verse, translation: spa, book: book, chapter: 1, verse_number: 1, text: "En el principio creó Dios los cielos y la tierra.")
 
       query = '{ chapter(translation: "spa-bes", book: "Génesis", chapter: 1) { text } }'
-      post "/graphql", params: { query: query }
+      post "/graphql", params: { query: query }, headers: headers
 
       data = JSON.parse(response.body)["data"]["chapter"]
       expect(data.size).to eq(1)
@@ -42,7 +44,7 @@ RSpec.describe "GraphQL Queries", type: :request do
   describe "verse query" do
     it "returns a single verse" do
       query = '{ verse(book: "GEN", chapter: 1, verse: 1) { bookId bookName chapter verse text } }'
-      post "/graphql", params: { query: query }
+      post "/graphql", params: { query: query }, headers: headers
 
       data = JSON.parse(response.body)["data"]["verse"]
       expect(data["bookId"]).to eq("GEN")
@@ -56,7 +58,7 @@ RSpec.describe "GraphQL Queries", type: :request do
   describe "search query" do
     it "finds verses by text content" do
       query = '{ search(query: "light") { bookId chapter verse text } }'
-      post "/graphql", params: { query: query }
+      post "/graphql", params: { query: query }, headers: headers
 
       data = JSON.parse(response.body)["data"]["search"]
       expect(data.size).to eq(1)
@@ -65,7 +67,7 @@ RSpec.describe "GraphQL Queries", type: :request do
 
     it "is case-insensitive" do
       query = '{ search(query: "BEGINNING") { text } }'
-      post "/graphql", params: { query: query }
+      post "/graphql", params: { query: query }, headers: headers
 
       data = JSON.parse(response.body)["data"]["search"]
       expect(data.size).to eq(1)
@@ -73,7 +75,7 @@ RSpec.describe "GraphQL Queries", type: :request do
 
     it "respects the limit" do
       query = '{ search(query: "the", limit: 2) { text } }'
-      post "/graphql", params: { query: query }
+      post "/graphql", params: { query: query }, headers: headers
 
       data = JSON.parse(response.body)["data"]["search"]
       expect(data.size).to be <= 2
@@ -83,7 +85,7 @@ RSpec.describe "GraphQL Queries", type: :request do
   describe "error handling" do
     it "returns a GraphQL error for unknown translations" do
       query = '{ passage(translation: "nope", reference: "John 3:16") { text } }'
-      post "/graphql", params: { query: query }
+      post "/graphql", params: { query: query }, headers: headers
 
       errors = JSON.parse(response.body)["errors"]
       expect(errors).to be_present
@@ -92,7 +94,7 @@ RSpec.describe "GraphQL Queries", type: :request do
 
     it "returns a GraphQL error for unknown books" do
       query = '{ passage(reference: "FakeBook 1:1") { text } }'
-      post "/graphql", params: { query: query }
+      post "/graphql", params: { query: query }, headers: headers
 
       errors = JSON.parse(response.body)["errors"]
       expect(errors).to be_present

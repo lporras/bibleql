@@ -1,0 +1,7 @@
+<%= form_tag reject_admin_api_key_request_path(api_key_request), method: :put do %>
+  <div style="margin-bottom: 10px;">
+    <%= label_tag :rejection_reason, "Rejection Reason" %><br>
+    <%= text_area_tag :rejection_reason, nil, rows: 3, style: "width: 100%;" %>
+  </div>
+  <%= submit_tag "Reject", data: { confirm: "Reject this request?" }, class: "button" %>
+<% end %>

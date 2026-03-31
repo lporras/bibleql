@@ -1,18 +1,21 @@
 # frozen_string_literal: true
 
 class GraphqlController < ApplicationController
+  include ApiAuthenticatable
+
   # Public API — skip CSRF for external clients (Apollo Sandbox, curl, etc.)
   skip_forgery_protection
+  before_action :authenticate_api_key!
 
   def execute
     variables = prepare_variables(params[:variables])
     query = params[:query]
     operation_name = params[:operationName]
     context = {
-      # Query context goes here, for example:
-      # current_user: current_user,
+      current_api_key: current_api_key
     }
     result = BibleqlSchema.execute(query, variables: variables, context: context, operation_name: operation_name)
+    current_api_key&.track_usage!
     render json: result
   rescue StandardError => e
     raise e unless Rails.env.development?

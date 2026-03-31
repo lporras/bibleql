@@ -26,9 +26,15 @@ gem "bible_ref"
 gem "graphql", "~> 2.5"
 # CORS support for GraphQL API [https://github.com/cyu/rack-cors]
 gem "rack-cors"
+# Rate limiting middleware [https://github.com/rack/rack-attack]
+gem "rack-attack"
+# Admin panel [https://activeadmin.info]
+gem "activeadmin"
+gem "activeadmin_assets"
+gem "devise"
 
 # Use Active Model has_secure_password [https://guides.rubyonrails.org/active_model_basics.html#securepassword]
-# gem "bcrypt", "~> 3.1.7"
+gem "bcrypt", "~> 3.1.7"
 
 # Windows does not include zoneinfo files, so bundle the tzinfo-data gem
 gem "tzinfo-data", platforms: %i[ windows jruby ]
@@ -69,6 +75,8 @@ group :development do
   gem "web-console"
   # GraphQL IDE [https://github.com/rmosolgo/graphiql-rails]
   gem "graphiql-rails"
+  # Preview emails in the browser [https://github.com/ryanb/letter_opener]
+  gem "letter_opener"
 end
 
 group :test do

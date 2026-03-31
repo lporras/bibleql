@@ -1,0 +1,11 @@
+<h1>BibleQL API Key Request Update</h1>
+
+<p>Hi <%= @api_key_request.name %>,</p>
+
+<p>Unfortunately, your API key request for the <strong><%= @api_key_request.environment %></strong> environment has been declined.</p>
+
+<% if @api_key_request.rejection_reason.present? %>
+  <p><strong>Reason:</strong> <%= @api_key_request.rejection_reason %></p>
+<% end %>
+
+<p>If you have questions, feel free to reach out or submit a new request.</p>

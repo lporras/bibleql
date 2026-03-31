@@ -1,0 +1,44 @@
+<% content_for(:title, "Request an API Key — BibleQL") %>
+
+<div class="max-w-lg mx-auto py-16">
+  <h1 class="text-3xl font-bold text-gray-900">Request an API Key</h1>
+  <p class="mt-2 text-gray-600">
+    Fill out the form below and we'll review your request. You'll receive your API key by email once approved.
+  </p>
+
+  <%= form_with(model: @api_key_request, url: api_key_requests_path, class: "mt-8 space-y-6") do |f| %>
+    <% if @api_key_request.errors.any? %>
+      <div class="rounded-lg bg-red-50 p-4">
+        <ul class="list-disc list-inside text-sm text-red-700">
+          <% @api_key_request.errors.full_messages.each do |msg| %>
+            <li><%= msg %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+
+    <div>
+      <%= f.label :name, "Your name", class: "block text-sm font-medium text-gray-700" %>
+      <%= f.text_field :name, required: true,
+        class: "mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" %>
+    </div>
+
+    <div>
+      <%= f.label :email, "Email address", class: "block text-sm font-medium text-gray-700" %>
+      <%= f.email_field :email, required: true,
+        class: "mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" %>
+    </div>
+
+    <div>
+      <%= f.label :description, "What will you use the API for?", class: "block text-sm font-medium text-gray-700" %>
+      <%= f.text_area :description, required: true, rows: 4,
+        class: "mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:ring-indigo-500",
+        placeholder: "Describe your application or use case..." %>
+    </div>
+
+    <div>
+      <%= f.submit "Submit Request",
+        class: "w-full rounded-lg bg-indigo-600 px-6 py-3 text-white font-semibold hover:bg-indigo-500 transition cursor-pointer" %>
+    </div>
+  <% end %>
+</div>

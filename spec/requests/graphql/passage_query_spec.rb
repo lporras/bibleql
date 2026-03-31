@@ -1,6 +1,8 @@
 require "rails_helper"
 
 RSpec.describe "Passage Query", type: :request do
+  let(:api_key) { create(:api_key, environment: "test") }
+  let(:headers) { auth_headers(api_key.token) }
   let(:translation) { create(:translation, identifier: "eng-web", name: "World English Bible", language: "eng") }
   let(:book) { create(:book, book_id: "JHN", name: "John", testament: "NT", position: 43) }
 
@@ -30,7 +32,7 @@ RSpec.describe "Passage Query", type: :request do
       }
     GQL
 
-    post "/graphql", params: { query: query }
+    post "/graphql", params: { query: query }, headers: headers
 
     expect(response).to have_http_status(:ok)
     data = JSON.parse(response.body)["data"]["passage"]
@@ -62,7 +64,7 @@ RSpec.describe "Passage Query", type: :request do
       }
     GQL
 
-    post "/graphql", params: { query: query }
+    post "/graphql", params: { query: query }, headers: headers
 
     data = JSON.parse(response.body)["data"]["passage"]
     expect(data["reference"]).to include("Juan")

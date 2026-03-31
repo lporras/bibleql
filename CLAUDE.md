@@ -55,6 +55,17 @@ bin/rails console
 bin/rails db:migrate
 bin/rails db:rollback
 bin/rails db:test:prepare
+
+# API Key management
+bundle exec rake "api_keys:create[name,email,environment]"  # environment: test or live
+bundle exec rake "api_keys:revoke[prefix]"
+bundle exec rake api_keys:list
+
+# Admin panel (development)
+# Visit http://localhost:3000/admin (admin@example.com / password)
+
+# API Key request form
+# Visit http://localhost:3000/api-keys/request/new
 ```
 
 ## Architecture
@@ -64,7 +75,10 @@ bin/rails db:test:prepare
 - **Database**: PostgreSQL with Solid Cache, Solid Queue, and Solid Cable for production
 - **Bible Data**: open-bibles git submodule (db/open-bibles/) parsed via bible_parser gem
 - **Reference Parsing**: bible_ref gem + localized book name fallback
-- **Asset Pipeline**: Propshaft with import maps (no Node.js bundler)
+- **Asset Pipeline**: Propshaft with import maps (no Node.js bundler); Sprockets coexists for ActiveAdmin assets
+- **Authentication**: API Key-based auth for GraphQL endpoint (Bearer token in Authorization header)
+- **Rate Limiting**: rack-attack (100 req/min per IP, 1000 req/day per API key)
+- **Admin Panel**: ActiveAdmin at /admin (Devise auth for AdminUser)
 - **Testing**: RSpec (not Minitest) with Capybara/Selenium for system tests
 - **Deployment**: Docker + Kamal
 - **Linting**: rubocop-rails-omakase style guide
@@ -75,6 +89,9 @@ bin/rails db:test:prepare
 - **Book** — Canonical book with standardized book_id (e.g., "MAT", "GEN")
 - **BookName** — Localized book name per translation (e.g., "Mateo" for Spanish Matthew)
 - **Verse** — Individual verse with translation, book, chapter, verse_number, text
+- **ApiKey** — API key with bcrypt digest, environment-aware prefixes (`bql_live_`/`bql_test_`), usage tracking
+- **ApiKeyRequest** — Self-service API key request (pending/approved/rejected workflow)
+- **AdminUser** — Devise-authenticated admin user for ActiveAdmin panel
 
 ## GraphQL Queries
 
@@ -89,3 +106,12 @@ bin/rails db:test:prepare
 
 - **BibleImporter** (`app/services/bible_importer.rb`) — Imports Bible translations from XML files using bible_parser
 - **PassageLookup** (`app/services/passage_lookup.rb`) — Resolves Bible references (supports both English and localized book names)
+
+## Authentication
+
+All `POST /graphql` requests require an API key via the `Authorization: Bearer <token>` header.
+
+- **Token prefixes**: `bql_live_` (production), `bql_test_` (development/test)
+- **One key per email per environment** (unique constraint)
+- Keys can be created via rake tasks or through the self-service request flow (admin approval required)
+- GraphiQL and Playground have a headers panel for entering the API key

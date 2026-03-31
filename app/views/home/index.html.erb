@@ -10,8 +10,10 @@
       A free, open-source GraphQL API for querying Bible verses and passages across multiple translations and languages.
     </p>
     <div class="mt-8 flex justify-center gap-4">
-      <%= link_to "Try the Playground", playground_path,
+      <%= link_to "Get an API Key", new_api_key_request_path,
         class: "rounded-lg bg-indigo-600 px-6 py-3 text-white font-semibold hover:bg-indigo-500 transition" %>
+      <%= link_to "Try the Playground", playground_path,
+        class: "rounded-lg border border-gray-300 px-6 py-3 text-gray-700 font-semibold hover:bg-gray-50 transition" %>
       <a href="https://github.com/lporras/bibleql" target="_blank" rel="noopener noreferrer"
         class="rounded-lg border border-gray-300 px-6 py-3 text-gray-700 font-semibold hover:bg-gray-50 transition">
         View on GitHub

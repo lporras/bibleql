@@ -1,4 +1,6 @@
 Rails.application.routes.draw do
+  devise_for :admin_users, ActiveAdmin::Devise.config
+  ActiveAdmin.routes(self)
   if Rails.env.development?
     mount GraphiQL::Rails::Engine, at: "/graphiql", graphql_path: "/graphql"
   end
@@ -14,5 +16,10 @@ Rails.application.routes.draw do
   # get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
 
   get "playground", to: "playground#show"
+  resources :api_key_requests, only: [ :new, :create ], path: "api-keys/request" do
+    collection do
+      get :success
+    end
+  end
   root "home#index"
 end
