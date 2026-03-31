@@ -115,3 +115,7 @@ All `POST /graphql` requests require an API key via the `Authorization: Bearer <
 - **One key per email per environment** (unique constraint)
 - Keys can be created via rake tasks or through the self-service request flow (admin approval required)
 - GraphiQL and Playground have a headers panel for entering the API key
+
+## Skills
+
+When working on Rails features, load and follow the guidelines in `.agents/skills/rails-expert/SKILL.md`. Reference files for specific topics (Active Record, Hotwire, RSpec, etc.) are in `.agents/skills/rails-expert/references/`.
