@@ -19,7 +19,7 @@ gem "stimulus-rails"
 # Build JSON APIs with ease [https://github.com/rails/jbuilder]
 gem "jbuilder"
 # Parse Bible XML files (USFX, OSIS, Zefania) [https://github.com/seven1m/bible_parser]
-gem "bible_parser", git: "https://github.com/lporras/bible_parser.git"
+gem "bible_parser", "~> 1.1.3"
 # Parse Bible reference strings [https://github.com/seven1m/bible_ref]
 gem "bible_ref"
 # GraphQL API [https://graphql-ruby.org]
