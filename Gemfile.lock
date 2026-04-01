@@ -1,3 +1,10 @@
+GIT
+  remote: https://github.com/lporras/bible_parser.git
+  revision: 76cfce3c85cb6480a80d3f29250ef5e05de3668f
+  specs:
+    bible_parser (1.1.2)
+      nokogiri (>= 1.6.0)
+
 GEM
   remote: https://rubygems.org/
   specs:
@@ -95,8 +102,6 @@ GEM
     base64 (0.3.0)
     bcrypt (3.1.22)
     bcrypt_pbkdf (1.1.2)
-    bible_parser (1.1.2)
-      nokogiri (>= 1.6.0)
     bible_ref (2.0.0)
       parslet (~> 1.6)
     bigdecimal (4.1.0)
@@ -511,7 +516,7 @@ DEPENDENCIES
   activeadmin
   activeadmin_assets
   bcrypt (~> 3.1.7)
-  bible_parser
+  bible_parser!
   bible_ref
   bootsnap
   brakeman
@@ -568,7 +573,7 @@ CHECKSUMS
   base64 (0.3.0) sha256=27337aeabad6ffae05c265c450490628ef3ebd4b67be58257393227588f5a97b
   bcrypt (3.1.22) sha256=1f0072e88c2d705d94aff7f2c5cb02eb3f1ec4b8368671e19112527489f29032
   bcrypt_pbkdf (1.1.2) sha256=c2414c23ce66869b3eb9f643d6a3374d8322dfb5078125c82792304c10b94cf6
-  bible_parser (1.1.2) sha256=d625bbf8609f0ce752bbcb9180a4d23e9f08850f9922777853bca45d77abfb58
+  bible_parser (1.1.2)
   bible_ref (2.0.0) sha256=b3fdc01daa9e14a14a78db4c9a6092ae8a6290a3b30edb8e1e6d92667c84ed8e
   bigdecimal (4.1.0) sha256=6dc07767aa3dc456ccd48e7ae70a07b474e9afd7c5bc576f80bd6da5c8dd6cae
   bindex (0.8.1) sha256=7b1ecc9dc539ed8bccfc8cb4d2732046227b09d6f37582ff12e50a5047ceb17e
