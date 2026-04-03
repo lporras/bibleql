@@ -102,7 +102,37 @@
 #   }
 # }
 
-# \u2014 7. List all available translations
+# \u2014 7. Get a random verse
+# {
+#   randomVerse(translation: "spa-bes") {
+#     bookName
+#     chapter
+#     verse
+#     text
+#   }
+# }
+
+# \u2014 8. Random verse from the New Testament
+# {
+#   randomVerse(testament: "NT") {
+#     bookName
+#     chapter
+#     verse
+#     text
+#   }
+# }
+
+# \u2014 9. Random verse from specific books
+# {
+#   randomVerse(books: "PSA,PRO") {
+#     bookName
+#     chapter
+#     verse
+#     text
+#   }
+# }
+
+# \u2014 10. List all available translations
 # {
 #   translations {
 #     identifier
@@ -111,7 +141,7 @@
 #   }
 # }
 
-# \u2014 8. List all 66 canonical books
+# \u2014 11. List all 66 canonical books
 # {
 #   books {
 #     bookId

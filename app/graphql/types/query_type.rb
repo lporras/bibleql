@@ -69,6 +69,35 @@ module Types
         .find_by!(translation: t, book: book_record, chapter: chapter, verse_number: verse)
     end
 
+    field :random_verse, Types::VerseType, null: false,
+      description: "Get a random Bible verse" do
+      argument :translation, String, required: false, default_value: "eng-web",
+        description: "Translation identifier (e.g. 'eng-web', 'spa-bes')"
+      argument :testament, String, required: false,
+        description: "Filter by testament: 'OT' (Old Testament) or 'NT' (New Testament)"
+      argument :books, String, required: false,
+        description: "Comma-separated list of book IDs or localized names (e.g. 'GEN,EXO' or 'Mateo,Juan')"
+    end
+    def random_verse(translation:, testament: nil, books: nil)
+      t = Translation.find_by!(identifier: translation)
+      scope = Verse.includes(:book).where(translation: t)
+
+      if books.present?
+        book_identifiers = books.split(",").map(&:strip)
+        book_records = book_identifiers.map { |b| find_book(t, b) }
+        scope = scope.where(book: book_records)
+      elsif testament.present?
+        testament_value = testament.upcase
+        unless %w[OT NT].include?(testament_value)
+          raise GraphQL::ExecutionError, "Testament must be 'OT' or 'NT'"
+        end
+        scope = scope.joins(:book).where(books: { testament: testament_value })
+      end
+
+      scope.order("RANDOM()").first ||
+        raise(ActiveRecord::RecordNotFound, "No verses found for the given filters")
+    end
+
     field :search, [ Types::VerseType ], null: false,
       description: "Search verses by text content" do
       argument :translation, String, required: false, default_value: "eng-web"
