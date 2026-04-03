@@ -94,76 +94,7 @@ bundle exec rake "api_keys:revoke[prefix]"
 
 ## GraphQL API
 
-### List translations
-
-```graphql
-{
-  translations {
-    identifier
-    name
-    language
-  }
-}
-```
-
-Response:
-
-```json
-{
-  "data": {
-    "translations": [
-      {
-        "identifier": "eng-web",
-        "name": "World English Bible",
-        "language": "eng"
-      },
-      {
-        "identifier": "spa-bes",
-        "name": "Biblia en Espanol",
-        "language": "spa"
-      }
-    ]
-  }
-}
-```
-
-### List books
-
-```graphql
-{
-  books {
-    bookId
-    name
-    testament
-    position
-  }
-}
-```
-
-Response:
-
-```json
-{
-  "data": {
-    "books": [
-      {
-        "bookId": "GEN",
-        "name": "Genesis",
-        "testament": "OT",
-        "position": 1
-      },
-      {
-        "bookId": "EXO",
-        "name": "Exodus",
-        "testament": "OT",
-        "position": 2
-      }
-    ]
-  }
-}
-```
-
-### Look up a passage
+### Quick example
 
 ```graphql
 {
@@ -203,145 +134,19 @@ Response:
 }
 ```
 
-### Look up a passage in Spanish
+### Available queries
 
-```graphql
-{
-  passage(translation: "spa-bes", reference: "Lucas 3:1-10") {
-    reference
-    text
-    translationName
-    verses {
-      bookName
-      chapter
-      verse
-      text
-    }
-  }
-}
-```
+| Query | Description |
+|-------|-------------|
+| `translations` | List all available translations |
+| `books` | List all 66 canonical books |
+| `passage(translation, reference)` | Look up a passage (e.g., `"John 3:16"`, `"Mateo 28:18-20"`) |
+| `chapter(translation, book, chapter)` | Get all verses in a chapter |
+| `verse(translation, book, chapter, verse)` | Get a single verse |
+| `search(translation, query, limit)` | Full-text search across verses |
+| `randomVerse(translation, testament, books)` | Get a random verse with optional filters |
 
-Response:
-
-```json
-{
-  "data": {
-    "passage": {
-      "reference": "Lucas 3:1-10",
-      "text": "En el ano quince del emperador de Tiberio Cesar, Poncio Pilato fue gobernador de Judea...",
-      "translationName": "spa-bes",
-      "verses": [
-        {
-          "bookName": "Lucas",
-          "chapter": 3,
-          "verse": 1,
-          "text": "En el ano quince del emperador de Tiberio Cesar..."
-        }
-      ]
-    }
-  }
-}
-```
-
-### Get a full chapter
-
-```graphql
-{
-  chapter(book: "GEN", chapter: 1) {
-    bookName
-    chapter
-    verse
-    text
-  }
-}
-```
-
-Response:
-
-```json
-{
-  "data": {
-    "chapter": [
-      {
-        "bookName": "Genesis",
-        "chapter": 1,
-        "verse": 1,
-        "text": "In the beginning, God created the heavens and the earth."
-      },
-      {
-        "bookName": "Genesis",
-        "chapter": 1,
-        "verse": 2,
-        "text": "The earth was formless and empty. Darkness was on the surface of the deep and God's Spirit was hovering over the surface of the waters."
-      }
-    ]
-  }
-}
-```
-
-### Get a single verse
-
-```graphql
-{
-  verse(book: "JHN", chapter: 3, verse: 16) {
-    bookName
-    chapter
-    verse
-    text
-  }
-}
-```
-
-Response:
-
-```json
-{
-  "data": {
-    "verse": {
-      "bookName": "John",
-      "chapter": 3,
-      "verse": 16,
-      "text": "For God so loved the world, that he gave his one and only Son, that whoever believes in him should not perish, but have eternal life."
-    }
-  }
-}
-```
-
-### Search verses
-
-```graphql
-{
-  search(query: "love", limit: 5) {
-    bookName
-    chapter
-    verse
-    text
-  }
-}
-```
-
-Response:
-
-```json
-{
-  "data": {
-    "search": [
-      {
-        "bookName": "Genesis",
-        "chapter": 22,
-        "verse": 2,
-        "text": "He said, \"Now take your son, your only son, Isaac, whom you love, and go into the land of Moriah. Offer him there as a burnt offering on one of the mountains which I will tell you of.\""
-      },
-      {
-        "bookName": "Genesis",
-        "chapter": 24,
-        "verse": 67,
-        "text": "Isaac brought her into his mother Sarah's tent, and took Rebekah, and she became his wife. He loved her. So Isaac was comforted after his mother's death."
-      }
-    ]
-  }
-}
-```
+See [docs/example_queries.md](docs/example_queries.md) for complete examples with responses for every query.
 
 ### Reference Formats
 
