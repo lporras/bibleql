@@ -20,12 +20,38 @@ RSpec.describe "API Key Requests", type: :request do
       }
     end
 
-    it "creates a new request with valid params" do
+    it "creates a new request and auto-approves it" do
       expect {
         post api_key_requests_path, params: valid_params
       }.to change(ApiKeyRequest, :count).by(1)
+        .and change(ApiKey, :count).by(1)
 
       expect(response).to redirect_to(success_api_key_requests_path(email: "john@example.com"))
+      expect(ApiKeyRequest.last.status).to eq("approved")
+    end
+
+    it "sends the approval email with the API key" do
+      expect {
+        post api_key_requests_path, params: valid_params
+      }.to change { ActionMailer::Base.deliveries.count }.by(1)
+
+      email = ActionMailer::Base.deliveries.last
+      expect(email.to).to eq([ "john@example.com" ])
+      expect(email.subject).to eq("Your BibleQL API Key is Ready")
+    end
+
+    it "rejects the request and rolls back the API key if email delivery fails" do
+      allow(ApiKeyMailer).to receive_message_chain(:key_approved, :deliver_now).and_raise(StandardError, "SMTP error")
+
+      expect {
+        post api_key_requests_path, params: valid_params
+      }.to change(ApiKeyRequest, :count).by(1)
+        .and change(ApiKey, :count).by(0)
+
+      expect(response).to redirect_to(success_api_key_requests_path(email: "john@example.com"))
+      request = ApiKeyRequest.last
+      expect(request.status).to eq("rejected")
+      expect(request.rejection_reason).to eq("Auto-approval failed: email delivery error")
     end
 
     it "returns unprocessable_entity with invalid params" do
