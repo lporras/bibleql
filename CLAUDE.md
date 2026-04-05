@@ -103,16 +103,22 @@ bundle exec rake api_keys:list
 ## GraphQL Queries
 
 - `translations` — List all available translations
+- `translation(identifier)` — Get a single translation with nested books and chapters
 - `books` — List all 66 canonical books
+- `languages` — List all languages with translation counts and nested translations
 - `passage(translation, reference)` — Look up a passage (e.g., "John 3:16", "Mateo 28:18-20")
 - `chapter(translation, book, chapter)` — Get all verses in a chapter
 - `verse(translation, book, chapter, verse)` — Get a single verse
 - `search(translation, query, limit)` — Full-text search across verses
+- `verseOfTheDay(translation, date)` — Get the curated verse of the day (defaults to today)
+- `bibleIndex(translation)` — Get the structural hierarchy of books, chapters, and verse counts
 
 ## Key Services
 
 - **BibleImporter** (`app/services/bible_importer.rb`) — Imports Bible translations from XML files using bible_parser
 - **PassageLookup** (`app/services/passage_lookup.rb`) — Resolves Bible references (supports both English and localized book names)
+- **VerseOfTheDayLookup** (`app/services/verse_of_the_day_lookup.rb`) — Returns a curated daily verse using a YAML list (`config/verse_of_the_day.yml`)
+- **BibleIndexBuilder** (`app/services/bible_index_builder.rb`) — Builds structural hierarchy (books, chapters, verse counts) for a translation
 - **ApiKeyMailer** (`app/mailers/api_key_mailer.rb`) — Sends approval/rejection emails via Resend
 
 ## Authentication

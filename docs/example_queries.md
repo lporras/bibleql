@@ -8,6 +8,58 @@ Authorization: Bearer bql_live_xxxxxxxxxxxxxxxx
 
 ---
 
+## Get a single translation
+
+Get a single translation by identifier, including nested books and chapters.
+
+```graphql
+{
+  translation(identifier: "eng-web") {
+    identifier
+    name
+    language
+    books {
+      bookId
+      name
+      testament
+      chapterCount
+      chapters {
+        number
+        verseCount
+      }
+    }
+  }
+}
+```
+
+Response:
+
+```json
+{
+  "data": {
+    "translation": {
+      "identifier": "eng-web",
+      "name": "World English Bible",
+      "language": "eng",
+      "books": [
+        {
+          "bookId": "GEN",
+          "name": "Genesis",
+          "testament": "OT",
+          "chapterCount": 50,
+          "chapters": [
+            { "number": 1, "verseCount": 31 },
+            { "number": 2, "verseCount": 25 }
+          ]
+        }
+      ]
+    }
+  }
+}
+```
+
+---
+
 ## List translations
 
 List all available Bible translations.
@@ -341,6 +393,180 @@ Response:
       "verse": 5,
       "text": "Trust in Yahweh with all your heart, and don't lean on your own understanding."
     }
+  }
+}
+```
+
+---
+
+## Verse of the Day
+
+Get the curated verse of the day. Defaults to today's date and the `eng-web` translation.
+
+```graphql
+{
+  verseOfTheDay {
+    reference
+    text
+    translationName
+    verses {
+      bookName
+      chapter
+      verse
+      text
+    }
+  }
+}
+```
+
+Response:
+
+```json
+{
+  "data": {
+    "verseOfTheDay": {
+      "reference": "John 3:16",
+      "text": "For God so loved the world, that he gave his one and only Son, that whoever believes in him should not perish, but have eternal life.",
+      "translationName": "World English Bible",
+      "verses": [
+        {
+          "bookName": "John",
+          "chapter": 3,
+          "verse": 16,
+          "text": "For God so loved the world, that he gave his one and only Son, that whoever believes in him should not perish, but have eternal life."
+        }
+      ]
+    }
+  }
+}
+```
+
+---
+
+## Verse of the Day for a specific date and translation
+
+Pass a date (ISO 8601) and translation to get the verse of the day in any language.
+
+```graphql
+{
+  verseOfTheDay(translation: "spa-bes", date: "2026-12-25") {
+    reference
+    text
+    translationName
+  }
+}
+```
+
+Response:
+
+```json
+{
+  "data": {
+    "verseOfTheDay": {
+      "reference": "Juan 3:16",
+      "text": "Porque de tal manera amó Dios al mundo, que ha dado a su Hijo unigénito...",
+      "translationName": "Biblia en Espanol"
+    }
+  }
+}
+```
+
+---
+
+## List languages
+
+List all languages that have at least one translation, with translation counts.
+
+```graphql
+{
+  languages {
+    code
+    translationCount
+    translations {
+      identifier
+      name
+    }
+  }
+}
+```
+
+Response:
+
+```json
+{
+  "data": {
+    "languages": [
+      {
+        "code": "eng",
+        "translationCount": 5,
+        "translations": [
+          { "identifier": "eng-kjv", "name": "King James Version" },
+          { "identifier": "eng-web", "name": "World English Bible" }
+        ]
+      },
+      {
+        "code": "spa",
+        "translationCount": 2,
+        "translations": [
+          { "identifier": "spa-bes", "name": "Biblia en Espanol" }
+        ]
+      }
+    ]
+  }
+}
+```
+
+---
+
+## Bible index
+
+Get the full structural hierarchy (books, chapters, verse counts) for a translation. Useful for building navigation UIs.
+
+```graphql
+{
+  bibleIndex(translation: "eng-web") {
+    bookId
+    name
+    testament
+    position
+    chapterCount
+    chapters {
+      number
+      verseCount
+    }
+  }
+}
+```
+
+Response:
+
+```json
+{
+  "data": {
+    "bibleIndex": [
+      {
+        "bookId": "GEN",
+        "name": "Genesis",
+        "testament": "OT",
+        "position": 1,
+        "chapterCount": 50,
+        "chapters": [
+          { "number": 1, "verseCount": 31 },
+          { "number": 2, "verseCount": 25 },
+          { "number": 3, "verseCount": 24 }
+        ]
+      },
+      {
+        "bookId": "EXO",
+        "name": "Exodus",
+        "testament": "OT",
+        "position": 2,
+        "chapterCount": 40,
+        "chapters": [
+          { "number": 1, "verseCount": 22 }
+        ]
+      }
+    ]
   }
 }
 ```

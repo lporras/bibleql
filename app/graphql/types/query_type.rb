@@ -24,10 +24,29 @@ module Types
       Translation.order(:identifier)
     end
 
+    field :translation, Types::TranslationType, null: false,
+      description: "Get a single translation by identifier" do
+      argument :identifier, String, required: true,
+        description: "Translation identifier (e.g. 'eng-web', 'spa-bes')"
+    end
+    def translation(identifier:)
+      Translation.find_by!(identifier: identifier)
+    end
+
     field :books, [ Types::BookType ], null: false,
       description: "List all canonical books in order"
     def books
       Book.order(:position)
+    end
+
+    LanguageData = Struct.new(:code, :translation_count, keyword_init: true)
+
+    field :languages, [ Types::LanguageType ], null: false,
+      description: "List all languages that have at least one translation"
+    def languages
+      Translation.group(:language).count.map do |lang, count|
+        LanguageData.new(code: lang, translation_count: count)
+      end
     end
 
     field :passage, Types::PassageType, null: false,
@@ -111,6 +130,30 @@ module Types
         .where("text ILIKE ?", "%#{Verse.sanitize_sql_like(query)}%")
         .order(:book_id, :chapter, :verse_number)
         .limit([ limit, 100 ].min)
+    end
+
+    field :verse_of_the_day, Types::PassageType, null: false,
+      description: "Get the verse of the day for a given date" do
+      argument :translation, String, required: false, default_value: "eng-web",
+        description: "Translation identifier (e.g. 'eng-web', 'spa-bes')"
+      argument :date, GraphQL::Types::ISO8601Date, required: false,
+        description: "Date for the verse of the day (defaults to today, format: YYYY-MM-DD)"
+    end
+    def verse_of_the_day(translation:, date: nil)
+      VerseOfTheDayLookup.new(
+        translation_identifier: translation,
+        date: date || Date.current
+      ).call
+    end
+
+    field :bible_index, [ Types::LocalizedBookType ], null: false,
+      description: "Get the structural hierarchy of books and chapters for a translation" do
+      argument :translation, String, required: false, default_value: "eng-web",
+        description: "Translation identifier (e.g. 'eng-web', 'spa-bes')"
+    end
+    def bible_index(translation:)
+      t = Translation.find_by!(identifier: translation)
+      BibleIndexBuilder.new(translation: t).call
     end
 
     private
