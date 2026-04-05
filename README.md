@@ -8,6 +8,10 @@ A GraphQL API for querying Bible verses and passages across multiple translation
 - **Flexible passage lookup** — single verses, ranges, multi-ranges (e.g., `"Matthew 25:31-33,46"`)
 - **Localized book names** — query using book names in the translation's language (e.g., `"Mateo 28:18-20"` for Spanish)
 - **Full-text search** across verses
+- **Verse of the Day** — curated daily verse for any translation and date
+- **Language discovery** — list all available languages with translation counts
+- **Translation hierarchy** — browse books, chapters, and verse counts per translation
+- **Bible index** — full structural overview of any translation
 - **API Key authentication** with environment-aware prefixes (`bql_live_` / `bql_test_`)
 - **Rate limiting** — 100 req/min per IP, 1,000 req/day per API key
 - **Interactive Playground** at `/playground` for exploring the API
@@ -139,12 +143,16 @@ Response:
 | Query | Description |
 |-------|-------------|
 | `translations` | List all available translations |
+| `translation(identifier)` | Get a single translation with nested books and chapters |
 | `books` | List all 66 canonical books |
+| `languages` | List all languages with translation counts |
 | `passage(translation, reference)` | Look up a passage (e.g., `"John 3:16"`, `"Mateo 28:18-20"`) |
 | `chapter(translation, book, chapter)` | Get all verses in a chapter |
 | `verse(translation, book, chapter, verse)` | Get a single verse |
 | `search(translation, query, limit)` | Full-text search across verses |
 | `randomVerse(translation, testament, books)` | Get a random verse with optional filters |
+| `verseOfTheDay(translation, date)` | Get the curated verse of the day |
+| `bibleIndex(translation)` | Get the structural hierarchy (books, chapters, verse counts) |
 
 See [docs/example_queries.md](docs/example_queries.md) for complete examples with responses for every query.
 
