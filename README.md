@@ -33,6 +33,12 @@ The interactive GraphQL playground is available at [`/playground`](https://bible
 - [open-bibles](https://github.com/seven1m/open-bibles) — public domain Bible translations (git submodule)
 - Docker + [Kamal](https://kamal-deploy.org) for deployment
 
+## Client Libraries
+
+- **Ruby:** [bibleql-ruby](https://github.com/lporras/bibleql-ruby) — idiomatic Ruby client gem
+- **Node.js:** [bibleql-js](https://github.com/lporras/bibleql-js) — JavaScript/TypeScript client package
+- **Examples:** [bibleql-example](https://github.com/lporras/bibleql-example) — working examples using both SDKs
+
 ## Prerequisites
 
 - Ruby 4.0+
@@ -180,44 +186,6 @@ The API is protected by rate limiting via [Rack::Attack](https://github.com/rack
 | API key request form per IP | 5/hour |
 
 Exceeded limits return a `429 Too Many Requests` response with a `Retry-After` header.
-
-## Client Libraries
-
-### Ruby
-
-The [bibleql-ruby](https://github.com/lporras/bibleql-ruby) gem provides an idiomatic Ruby client for the BibleQL API.
-
-```bash
-gem install bibleql-ruby
-# or add to your Gemfile
-gem "bibleql-ruby"
-```
-
-```ruby
-require "bibleql"
-
-BibleQL.configure do |config|
-  config.api_key = "bql_live_..."
-  config.default_translation = "eng-web"
-end
-
-client = BibleQL.client
-
-# Look up a passage
-passage = client.passage("John 3:16")
-puts passage.text
-
-# Search verses
-results = client.search("love", limit: 5)
-
-# Verse of the day
-verse = client.verse_of_the_day
-
-# List available translations
-client.translations
-```
-
-See the [bibleql-ruby README](https://github.com/lporras/bibleql-ruby) for full documentation including error handling, per-instance configuration, and all available methods.
 
 ## Running Tests
 
