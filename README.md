@@ -19,7 +19,7 @@ A GraphQL API for querying Bible verses and passages across multiple translation
 
 ## Playground
 
-The interactive GraphQL playground is available at [`/playground`](https://bibleql-rails.onrender.com/playground) and lets you explore the API with example queries and a headers panel for authentication.
+The interactive GraphQL playground is available at [`/playground`](https://bibleql.org/playground) and lets you explore the API with example queries and a headers panel for authentication.
 
 ![BibleQL Playground](docs/playground-screenshot.png)
 
