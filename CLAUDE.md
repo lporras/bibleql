@@ -84,7 +84,7 @@ bundle exec rake api_keys:list
 - **Rate Limiting**: rack-attack (100 req/min per IP, 1000 req/day per API key)
 - **Admin Panel**: ActiveAdmin at /admin (Devise auth for AdminUser)
 - **Testing**: RSpec (not Minitest) with Capybara/Selenium for system tests
-- **Deployment**: Docker + Kamal; hosted on Render (bibleql-rails.onrender.com)
+- **Deployment**: Docker + Kamal; hosted on Render (bibleql.org)
 - **CI/CD**: GitHub Actions (Brakeman, Bundler Audit, Importmap Audit, RuboCop, RSpec)
 - **Linting**: rubocop-rails-omakase style guide
 - **Email**: Resend API for transactional emails (API key approval/rejection notifications)
