@@ -146,6 +146,27 @@ module Types
       ).call
     end
 
+    field :semantic_search, [ Types::SemanticSearchResultType ], null: false,
+      description: "Search verses by semantic meaning using AI embeddings" do
+      argument :query, String, required: true, description: "Natural language search query (e.g. 'fe y esperanza', 'perdón')"
+      argument :translation, String, required: false, default_value: "spa-rv1909",
+        description: "Translation identifier (currently only spa-rv1909 has embeddings)"
+      argument :limit, Integer, required: false, default_value: 10,
+        description: "Max number of results (max 50)"
+    end
+    def semantic_search(query:, translation:, limit:)
+      t = Translation.find_by!(identifier: translation)
+      query_embedding = EmbeddingService.embed(query)
+      limit = [ limit, 50 ].min
+
+      Verse.includes(:book, :translation)
+        .where(translation: t)
+        .with_embedding
+        .nearest_neighbors(:embedding, query_embedding, distance: "cosine")
+        .first(limit)
+        .map { |verse| { verse: verse, similarity: (1.0 - verse.neighbor_distance).round(4) } }
+    end
+
     field :bible_index, [ Types::LocalizedBookType ], null: false,
       description: "Get the structural hierarchy of books and chapters for a translation" do
       argument :translation, String, required: false, default_value: "eng-web",

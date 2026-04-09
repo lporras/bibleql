@@ -10,9 +10,10 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_31_033608) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_08_000003) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
+  enable_extension "vector"
 
   create_table "active_admin_comments", force: :cascade do |t|
     t.bigint "author_id"
@@ -110,11 +111,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_31_033608) do
     t.bigint "book_id", null: false
     t.integer "chapter", null: false
     t.datetime "created_at", null: false
+    t.vector "embedding", limit: 1536
     t.text "text", null: false
     t.bigint "translation_id", null: false
     t.datetime "updated_at", null: false
     t.integer "verse_number", null: false
     t.index ["book_id"], name: "index_verses_on_book_id"
+    t.index ["embedding"], name: "index_verses_on_embedding", opclass: :vector_cosine_ops, using: :hnsw
     t.index ["translation_id", "book_id", "chapter", "verse_number"], name: "index_verses_uniqueness", unique: true
     t.index ["translation_id", "book_id", "chapter"], name: "index_verses_on_translation_book_chapter"
     t.index ["translation_id"], name: "index_verses_on_translation_id"

@@ -28,6 +28,10 @@ gem "graphql", "~> 2.5"
 gem "rack-cors"
 # Rate limiting middleware [https://github.com/rack/rack-attack]
 gem "rack-attack"
+# pgvector integration for ActiveRecord [https://github.com/ankane/neighbor]
+gem "neighbor"
+# LLM client for embeddings, chat, etc. [https://github.com/crmne/ruby_llm]
+gem "ruby_llm"
 # Resend email delivery [https://resend.com/docs/send-with-ruby-on-rails]
 gem "resend"
 # Admin panel [https://activeadmin.info]
@@ -59,6 +63,9 @@ gem "thruster", require: false
 gem "image_processing", "~> 1.2"
 
 group :development, :test do
+  # Load .env file into ENV [https://github.com/bkeepers/dotenv]
+  gem "dotenv-rails"
+
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
   gem "debug", platforms: %i[ mri windows ], require: "debug/prelude"
 

@@ -12,6 +12,10 @@ class BibleqlSchema < GraphQL::Schema
     raise GraphQL::ExecutionError, err.message
   end
 
+  rescue_from(Faraday::Error) do |_err, _obj, _args, _ctx, _field|
+    raise GraphQL::ExecutionError, "Embedding service is temporarily unavailable. Please try again later."
+  end
+
   # For batch-loading (see https://graphql-ruby.org/dataloader/overview.html)
   use GraphQL::Dataloader
 

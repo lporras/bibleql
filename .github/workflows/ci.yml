@@ -70,7 +70,7 @@ jobs:
 
     services:
       postgres:
-        image: postgres
+        image: pgvector/pgvector:pg17
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
