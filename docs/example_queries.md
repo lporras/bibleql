@@ -303,6 +303,55 @@ Response:
 
 ---
 
+## Semantic search
+
+Search verses by meaning using AI embeddings. Currently available for `spa-rv1909` (Reina Valera 1909).
+
+```graphql
+{
+  semanticSearch(query: "fe y esperanza", translation: "spa-rv1909", limit: 5) {
+    verse {
+      bookName
+      chapter
+      verse
+      text
+    }
+    similarity
+  }
+}
+```
+
+Response:
+
+```json
+{
+  "data": {
+    "semanticSearch": [
+      {
+        "verse": {
+          "bookName": "1 Corintios",
+          "chapter": 13,
+          "verse": 13,
+          "text": "Y ahora permanecen la fe, la esperanza y el amor, estos tres; pero el mayor de ellos es el amor."
+        },
+        "similarity": 0.8742
+      },
+      {
+        "verse": {
+          "bookName": "Hebreos",
+          "chapter": 11,
+          "verse": 1,
+          "text": "Es, pues, la fe la certeza de lo que se espera, la convicción de lo que no se ve."
+        },
+        "similarity": 0.8315
+      }
+    ]
+  }
+}
+```
+
+---
+
 ## Random verse
 
 Get a random verse from any book.
