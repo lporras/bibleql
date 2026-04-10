@@ -1,7 +1,7 @@
 require "rails_helper"
 
 RSpec.describe EmbeddingService do
-  let(:fake_vector) { Array.new(1536) { rand(-1.0..1.0) } }
+  let(:fake_vector) { Array.new(256) { rand(-1.0..1.0) } }
 
   describe ".embed" do
     it "returns a vector for a single text" do
@@ -11,8 +11,8 @@ RSpec.describe EmbeddingService do
       result = described_class.embed("fe y esperanza")
 
       expect(result).to eq(fake_vector)
-      expect(result.length).to eq(1536)
-      expect(RubyLLM).to have_received(:embed).with("fe y esperanza", model: "text-embedding-3-small")
+      expect(result.length).to eq(256)
+      expect(RubyLLM).to have_received(:embed).with("fe y esperanza", model: "text-embedding-3-small", dimensions: 256)
     end
   end
 
@@ -25,8 +25,8 @@ RSpec.describe EmbeddingService do
       result = described_class.embed_batch([ "text one", "text two" ])
 
       expect(result.length).to eq(2)
-      expect(result.first.length).to eq(1536)
-      expect(RubyLLM).to have_received(:embed).with([ "text one", "text two" ], model: "text-embedding-3-small")
+      expect(result.first.length).to eq(256)
+      expect(RubyLLM).to have_received(:embed).with([ "text one", "text two" ], model: "text-embedding-3-small", dimensions: 256)
     end
   end
 end
