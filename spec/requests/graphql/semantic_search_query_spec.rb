@@ -7,9 +7,9 @@ RSpec.describe "GraphQL semanticSearch query", type: :request do
   let(:book) { create(:book, book_id: "1CO", name: "1 Corinthians", testament: "NT", position: 46) }
 
   # Simple distinct vectors for predictable similarity ordering
-  let(:query_vector) { [ 1.0 ] + Array.new(1535, 0.0) }
-  let(:close_vector) { [ 0.9, 0.1 ] + Array.new(1534, 0.0) }
-  let(:far_vector) { [ 0.1, 0.9 ] + Array.new(1534, 0.0) }
+  let(:query_vector) { [ 1.0 ] + Array.new(255, 0.0) }
+  let(:close_vector) { [ 0.9, 0.1 ] + Array.new(254, 0.0) }
+  let(:far_vector) { [ 0.1, 0.9 ] + Array.new(254, 0.0) }
 
   before do
     create(:book_name, translation: translation, book: book, name: "1 Corintios")

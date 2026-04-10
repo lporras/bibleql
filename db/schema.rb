@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_08_000003) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_10_223938) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "vector"
@@ -111,7 +111,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_08_000003) do
     t.bigint "book_id", null: false
     t.integer "chapter", null: false
     t.datetime "created_at", null: false
-    t.vector "embedding", limit: 1536
+    t.vector "embedding", limit: 256
     t.text "text", null: false
     t.bigint "translation_id", null: false
     t.datetime "updated_at", null: false
