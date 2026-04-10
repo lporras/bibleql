@@ -1,6 +1,5 @@
 class ReduceEmbeddingDimensions < ActiveRecord::Migration[8.1]
   def up
-    Verse.update_all(embedding: nil)
     remove_index :verses, name: "index_verses_on_embedding"
     remove_column :verses, :embedding
     add_column :verses, :embedding, :vector, limit: 256
