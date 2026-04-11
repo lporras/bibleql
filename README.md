@@ -1,5 +1,7 @@
 # BibleQL
 
+[![CI](https://github.com/lporras/bibleql/actions/workflows/ci.yml/badge.svg)](https://github.com/lporras/bibleql/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/lporras/bibleql/branch/main/graph/badge.svg)](https://codecov.io/gh/lporras/bibleql)
 [![Donate using Liberapay](https://img.shields.io/liberapay/receives/bibleql.svg?logo=liberapay)](https://liberapay.com/bibleql/donate)
 
 A GraphQL API for querying Bible verses and passages across multiple translations. Supports localized book names so you can query in English (`"John 3:16"`), Spanish (`"Juan 3:16"`), and 30+ other languages.
