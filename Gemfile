@@ -38,6 +38,10 @@ gem "resend"
 gem "activeadmin"
 gem "activeadmin_assets"
 gem "devise"
+# SEO: meta tags management [https://github.com/kpumuk/meta-tags]
+gem "meta-tags", "~> 2.22"
+# SEO: sitemap generation [https://github.com/kjvarga/sitemap_generator]
+gem "sitemap_generator", "~> 6.3"
 
 # Use Active Model has_secure_password [https://guides.rubyonrails.org/active_model_basics.html#securepassword]
 gem "bcrypt", "~> 3.1.7"

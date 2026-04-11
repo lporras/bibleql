@@ -1,10 +1,19 @@
 class ApiKeyRequestsController < ApplicationController
   def new
     @api_key_request = ApiKeyRequest.new
+    set_meta_tags(
+      title: "Get a Free Bible API Key",
+      description: "Request a free API key for BibleQL, the open-source GraphQL Bible API. " \
+                   "Access verses, passages, and chapters across 43+ translations."
+    )
   end
 
   def success
     @email = params[:email]
+    set_meta_tags(
+      title: "Request Submitted",
+      robots: "noindex, nofollow"
+    )
   end
 
   def create
