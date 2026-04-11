@@ -10,7 +10,7 @@ Rails.application.configure do
     policy.font_src    :self, :data
     policy.img_src     :self, :data, :https
     policy.object_src  :none
-    policy.script_src  :self
+    policy.script_src  :self, "https://liberapay.com"
     policy.style_src   :self, :unsafe_inline  # ActiveAdmin needs inline styles
     policy.connect_src :self
     policy.frame_ancestors :none
