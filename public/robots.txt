@@ -1,1 +1,6 @@
-# See https://www.robotstxt.org/robotstxt.html for documentation on how to use the robots.txt file
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /api-keys/request/success
+
+Sitemap: https://bibleql.org/sitemap.xml.gz

@@ -1,0 +1,40 @@
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebSite",
+      "name": "BibleQL",
+      "url": "https://bibleql.org",
+      "description": "Free, open-source GraphQL Bible API for querying verses, passages, and chapters across multiple translations and languages."
+    },
+    {
+      "@type": "WebAPI",
+      "name": "BibleQL GraphQL API",
+      "url": "https://bibleql.org/graphql",
+      "documentation": "https://bibleql.org/playground",
+      "description": "A GraphQL API for querying Bible verses, passages, and chapters across <%= @translations_count %> translations in <%= @languages_count %> languages.",
+      "provider": {
+        "@type": "Organization",
+        "name": "BibleQL",
+        "url": "https://bibleql.org"
+      },
+      "termsOfService": "https://github.com/lporras/bibleql/blob/main/LICENSE",
+      "license": "https://opensource.org/licenses/MIT"
+    },
+    {
+      "@type": "SoftwareApplication",
+      "name": "BibleQL",
+      "url": "https://bibleql.org",
+      "applicationCategory": "DeveloperApplication",
+      "operatingSystem": "Any",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      "description": "Free, open-source GraphQL Bible API with <%= @translations_count %> translations in <%= @languages_count %> languages."
+    }
+  ]
+}
+</script>
