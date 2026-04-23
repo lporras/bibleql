@@ -58,6 +58,14 @@ ActiveAdmin.register ApiKeyRequest do
           render "admin/api_key_requests/reject_form", api_key_request: resource
         end
       end
+    elsif resource.status == "rejected"
+      panel "Actions" do
+        para do
+          link_to "Resend Approval", resend_approval_admin_api_key_request_path(resource),
+            method: :put, class: "button",
+            data: { confirm: "This will approve the request and resend the API key to #{resource.email}?" }
+        end
+      end
     end
   end
 
@@ -71,6 +79,12 @@ ActiveAdmin.register ApiKeyRequest do
     resource.reject!(params[:rejection_reason])
     ApiKeyMailer.key_rejected(resource).deliver_later
     redirect_to admin_api_key_request_path(resource), notice: "Request rejected."
+  end
+
+  member_action :resend_approval, method: :put do
+    api_key = resource.approve!
+    ApiKeyMailer.key_approved(resource, api_key.token).deliver_now
+    redirect_to admin_api_key_request_path(resource), notice: "Request approved. API key resent to #{resource.email}."
   end
 
   controller do
