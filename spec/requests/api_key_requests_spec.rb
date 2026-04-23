@@ -54,9 +54,9 @@ RSpec.describe "API Key Requests", type: :request do
       expect(request.rejection_reason).to eq("Auto-approval failed: email delivery error")
     end
 
-    it "returns unprocessable_entity with invalid params" do
+    it "returns unprocessable_content with invalid params" do
       post api_key_requests_path, params: { api_key_request: { name: "" } }
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
     end
 
     it "prevents duplicate pending requests" do
@@ -66,7 +66,7 @@ RSpec.describe "API Key Requests", type: :request do
         post api_key_requests_path, params: valid_params
       }.not_to change(ApiKeyRequest, :count)
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
     end
   end
 end
