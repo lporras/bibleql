@@ -24,7 +24,7 @@ class ApiKeyRequestsController < ApplicationController
       auto_approve(@api_key_request)
       redirect_to success_api_key_requests_path(email: @api_key_request.email)
     else
-      render :new, status: :unprocessable_entity
+      render :new, status: :unprocessable_content
     end
   end
 
