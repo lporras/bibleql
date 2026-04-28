@@ -180,7 +180,7 @@ GEM
       activesupport (>= 6.1)
     graphiql-rails (1.10.5)
       railties
-    graphql (2.5.22)
+    graphql (2.6.1)
       base64
       fiber-storage
       logger
@@ -564,7 +564,7 @@ DEPENDENCIES
   dotenv-rails
   factory_bot_rails (~> 6.4)
   graphiql-rails
-  graphql (~> 2.5)
+  graphql (~> 2.6)
   image_processing (~> 1.2)
   importmap-rails
   jbuilder
@@ -662,7 +662,7 @@ CHECKSUMS
   fugit (1.12.1) sha256=5898f478ede9b415f0804e42b8f3fd53f814bd85eebffceebdbc34e1107aaf68
   globalid (1.3.0) sha256=05c639ad6eb4594522a0b07983022f04aa7254626ab69445a0e493aa3786ff11
   graphiql-rails (1.10.5) sha256=d911486eeac01e125d403a61c04f634cccaff9f8ecee5dc4efce3e7aa11bf5d3
-  graphql (2.5.22) sha256=d2dccbe6a432e1b89bdb8ccca0572a6bb867a28caceb5fe029ee7741c7854bc0
+  graphql (2.6.1) sha256=e4b4290dda309fcfba2df38cacf4ee67e2194e06f09b9efbd7738f1df7e41967
   has_scope (0.9.0) sha256=783a93006cf898525bb4899696f1d088c0f6ff897d6df2bf03fdbbe0d0b5124c
   httparty (0.24.2) sha256=8fca6a54aa0c4aa4303a0fd33e5e2156175d6a5334f714263b458abd7fda9c38
   i18n (1.14.8) sha256=285778639134865c5e0f6269e0b818256017e8cde89993fdfcbfb64d088824a5
