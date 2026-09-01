@@ -8,7 +8,7 @@ A GraphQL API for querying Bible verses and passages across multiple translation
 
 ## Features
 
-- **43 Bible translations** in 31 languages (public domain)
+- **47 Bible translations** in 31 languages — 41 public domain / freely licensed from [open-bibles](https://github.com/seven1m/open-bibles), plus 6 from [Bible List](https://biblelist.netlify.app/)
 - **Flexible passage lookup** — single verses, ranges, multi-ranges (e.g., `"Matthew 25:31-33,46"`)
 - **Localized book names** — query using book names in the translation's language (e.g., `"Mateo 28:18-20"` for Spanish)
 - **Full-text search** across verses
@@ -35,6 +35,7 @@ The interactive GraphQL playground is available at [`/playground`](https://bible
 - [bible_parser](https://github.com/seven1m/bible_parser) — parses USFX/OSIS/Zefania XML Bible files
 - [bible_ref](https://github.com/seven1m/bible_ref) — parses Bible reference strings
 - [open-bibles](https://github.com/seven1m/open-bibles) — public domain Bible translations (git submodule)
+- [Bible List](https://biblelist.netlify.app/) — searchable collection of 1,550+ XML Bibles, source of the additional translations in `db/biblelist/`
 - Docker + [Kamal](https://kamal-deploy.org) for deployment
 
 ## Client Libraries
@@ -65,12 +66,34 @@ bundle install
 # Create and migrate the database
 bin/rails db:create db:migrate
 
-# Import Bible translations (all ~43 translations)
+# Import Bible translations (all ~45 open-bibles translations)
 bundle exec rake bible:import
 
 # Or import a single translation
 bundle exec rake "bible:import_one[eng-web]"
 ```
+
+### Additional translations
+
+Beyond the open-bibles submodule, BibleQL can import XML Bibles from
+[Bible List](https://biblelist.netlify.app/) — a searchable collection of 1,550+ XML Bibles.
+Drop the downloaded files in `db/biblelist/`, describe them in
+`config/biblelist_translations.yml`, and import them with their own command:
+
+```bash
+bundle exec rake biblelist:list                    # show configured files and import status
+bundle exec rake biblelist:import                  # import all of them
+bundle exec rake "biblelist:import_one[eng-niv]"   # import a single one
+```
+
+These files use a different XML shape than the open-bibles formats (`<bible><testament><book
+number="1">`), handled by the `bible_parser` format plugin in `lib/biblelist_format/`. They
+identify books by ordinal number only, so their localized book names are copied from an
+already-imported translation of the same language (`book_names_from` in the YAML) — run
+`rake bible:import` first.
+
+> **Note:** most translations available through Bible List are copyrighted. Confirm you hold the
+> necessary rights before exposing any of them through a public API.
 
 ## Running Locally
 

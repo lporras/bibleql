@@ -9,7 +9,7 @@ BibleQL is a GraphQL API for querying Bible verses and passages across multiple 
 ### Goals
 
 - Provide a GraphQL endpoint to query Bible verses and passages
-- Support multiple Bible translations (~43 public domain translations)
+- Support multiple Bible translations (~45 public domain from open-bibles, plus extras from biblelist.netlify.app in `db/biblelist/`)
 - Enable flexible queries by book, chapter, verse, and passage ranges
 - Support localized book names (e.g., "Mateo" for Spanish, "Matthew" for English)
 
@@ -33,6 +33,11 @@ bundle exec rake "bible:update_metadata[eng-web]"
 
 # Regenerate config/translations.yml from the open-bibles README (after a submodule update)
 bundle exec rake bible:generate_metadata
+
+# Import the db/biblelist/ translations (different XML format, see BiblelistFormat)
+bundle exec rake biblelist:list                    # show config + import status
+bundle exec rake biblelist:import                  # all
+bundle exec rake "biblelist:import_one[eng-niv]"   # one
 
 # Run the server
 bin/rails server
@@ -124,6 +129,8 @@ bundle exec rake api_keys:list
 ## Key Services
 
 - **BibleImporter** (`app/services/bible_importer.rb`) — Imports Bible translations from XML files using bible_parser
+- **BiblelistImporter** (`app/services/biblelist_importer.rb`) — Imports the `db/biblelist/` translations (from biblelist.netlify.app); metadata in `config/biblelist_translations.yml`, book names copied from a same-language translation
+- **BiblelistFormat** (`lib/biblelist_format/`) — A `bible_parser` format plugin (`Base::Parser`/`Base::Document` subclasses) for the `<bible><testament><book number>` XML shape; not registered in `BibleParser::PARSERS`, instantiate directly
 - **PassageLookup** (`app/services/passage_lookup.rb`) — Resolves Bible references (supports both English and localized book names)
 - **VerseOfTheDayLookup** (`app/services/verse_of_the_day_lookup.rb`) — Returns a curated daily verse using a YAML list (`config/verse_of_the_day.yml`)
 - **BibleIndexBuilder** (`app/services/bible_index_builder.rb`) — Builds structural hierarchy (books, chapters, verse counts) for a translation

@@ -27,7 +27,7 @@
     const defaultQuery = `# Welcome to BibleQL API Playground!
 #
 # A GraphQL API for querying Bible verses and passages
-# across 43 translations in 31 languages.
+# across 47 translations in 31 languages.
 #
 # Supported reference formats:
 #   "John 3:16"              \u2014 single verse
@@ -36,10 +36,11 @@
 #   "Genesis 1"              \u2014 full chapter
 #   "Mateo 28:18-20"         \u2014 localized book names
 #
-# Try the examples below! Uncomment one block at a time.
+# Every example below is a named operation, so they can all stay uncommented.
+# Pick which one to run from the dropdown on the \u25b6 execute button, or click
+# the \u25b6 in the gutter next to the operation you want.
 
-# \u2014 1. Look up a passage
-{
+query LookupPassage {
   passage(translation: "eng-web", reference: "John 3:16") {
     reference
     text
@@ -55,119 +56,145 @@
   }
 }
 
-# \u2014 2. Look up a passage in Spanish
-# {
-#   passage(translation: "spa-bes", reference: "Mateo 28:18-20") {
-#     reference
-#     text
-#     translationName
-#     verses { bookName chapter verse text }
-#   }
-# }
+query LookupPassageInSpanish {
+  passage(translation: "spa-bes", reference: "Mateo 28:18-20") {
+    reference
+    text
+    translationName
+    verses { bookName chapter verse text }
+  }
+}
 
-# \u2014 3. Look up multiple verse ranges
-# {
-#   passage(reference: "Matthew 25:31-33,46") {
-#     reference
-#     text
-#     verses { chapter verse text }
-#   }
-# }
+query MultipleVerseRanges {
+  passage(reference: "Matthew 25:31-33,46") {
+    reference
+    text
+    verses { chapter verse text }
+  }
+}
 
-# \u2014 4. Get a full chapter
-# {
-#   chapter(book: "GEN", chapter: 1) {
-#     bookName
-#     chapter
-#     verse
-#     text
-#   }
-# }
+query FullChapter {
+  chapter(book: "GEN", chapter: 1) {
+    bookName
+    chapter
+    verse
+    text
+  }
+}
 
-# \u2014 5. Get a single verse
-# {
-#   verse(book: "JHN", chapter: 3, verse: 16) {
-#     bookName
-#     chapter
-#     verse
-#     text
-#   }
-# }
+query SingleVerse {
+  verse(book: "JHN", chapter: 3, verse: 16) {
+    bookName
+    chapter
+    verse
+    text
+  }
+}
 
-# \u2014 6. Search verses by text
-# {
-#   search(query: "love", limit: 10) {
-#     bookName
-#     chapter
-#     verse
-#     text
-#   }
-# }
+query SearchVerses {
+  search(query: "love", limit: 10) {
+    bookName
+    chapter
+    verse
+    text
+  }
+}
 
-# \u2014 7. Get a random verse
-# {
-#   randomVerse(translation: "spa-bes") {
-#     bookName
-#     chapter
-#     verse
-#     text
-#   }
-# }
+query RandomVerse {
+  randomVerse(translation: "spa-bes") {
+    bookName
+    chapter
+    verse
+    text
+  }
+}
 
-# \u2014 8. Random verse from the New Testament
-# {
-#   randomVerse(testament: "NT") {
-#     bookName
-#     chapter
-#     verse
-#     text
-#   }
-# }
+query RandomVerseFromNewTestament {
+  randomVerse(testament: "NT") {
+    bookName
+    chapter
+    verse
+    text
+  }
+}
 
-# \u2014 9. Random verse from specific books
-# {
-#   randomVerse(books: "PSA,PRO") {
-#     bookName
-#     chapter
-#     verse
-#     text
-#   }
-# }
+query RandomVerseFromBooks {
+  randomVerse(books: "PSA,PRO") {
+    bookName
+    chapter
+    verse
+    text
+  }
+}
 
-# \u2014 10. Semantic search (AI-powered, spa-rv1909)
-# {
-#   semanticSearch(query: "fe y esperanza", limit: 5) {
-#     verse {
-#       bookName
-#       chapter
-#       verse
-#       text
-#     }
-#     similarity
-#   }
-# }
+query SemanticSearch {
+  semanticSearch(query: "fe y esperanza", limit: 5) {
+    verse {
+      bookName
+      chapter
+      verse
+      text
+    }
+    similarity
+  }
+}
 
-# \u2014 12. List all available translations
-# {
-#   translations {
-#     identifier
-#     name
-#     abbrev
-#     language
-#     languageName
-#     note
-#   }
-# }
+query VerseOfTheDay {
+  verseOfTheDay(translation: "eng-web") {
+    reference
+    text
+    translationName
+    verses { bookName chapter verse text }
+  }
+}
 
-# \u2014 13. List all 66 canonical books
-# {
-#   books {
-#     bookId
-#     name
-#     testament
-#     position
-#   }
-# }
+query ListTranslations {
+  translations {
+    identifier
+    name
+    abbrev
+    language
+    languageName
+    note
+  }
+}
+
+query GetTranslation {
+  translation(identifier: "spa-nvi") {
+    identifier
+    name
+    abbrev
+    language
+    languageName
+    note
+  }
+}
+
+query ListLanguages {
+  languages {
+    code
+    translationCount
+    translations { identifier name abbrev }
+  }
+}
+
+query ListBooks {
+  books {
+    bookId
+    name
+    testament
+    position
+  }
+}
+
+query BibleIndex {
+  bibleIndex(translation: "eng-web") {
+    bookId
+    name
+    chapterCount
+    chapters { number verseCount }
+  }
+}
 `;
 
     const defaultHeaders = JSON.stringify({
