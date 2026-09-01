@@ -1,0 +1,233 @@
+# Translation metadata sourced from db/open-bibles/README.md "Translation List".
+# Regenerate with: bundle exec rake bible:generate_metadata
+---
+bul-bulgarian:
+  name: Bulgarian Bible
+  abbrev:
+  language_name: Bulgarian
+  note: Public Domain
+chi-cuv:
+  name: Chinese Union Version
+  abbrev: CUV
+  language_name: Chinese (Traditional)
+  note: Public Domain
+chi-cuv-simp:
+  name: Chinese Union Version
+  abbrev: CUV
+  language_name: Chinese (Simplified)
+  note: Public Domain
+chr-cherokee:
+  name: Cherokee New Testament
+  abbrev:
+  language_name: Cherokee
+  note: Public Domain
+cze-bkr:
+  name: Bible kralická
+  abbrev:
+  language_name: Czech
+  note: Public Domain
+dan-danish:
+  name: Danish Bible
+  abbrev:
+  language_name: Danish
+  note: Public Domain
+deu-luther1912:
+  name: Luther Bible 1912
+  abbrev:
+  language_name: German
+  note: Public Domain
+dut-statenvertaling:
+  name: Statenvertaling (1637)
+  abbrev:
+  language_name: Dutch
+  note: Public Domain
+eng-asv:
+  name: American Standard Version (1901)
+  abbrev: ASV
+  language_name: English
+  note: Public Domain
+eng-bbe:
+  name: Bible in Basic English
+  abbrev: BBE
+  language_name: English
+  note: Public Domain
+eng-darby:
+  name: Darby Bible
+  abbrev: DARBY
+  language_name: English
+  note: Public Domain
+eng-dra:
+  name: Douay-Rheims 1899 American Edition
+  abbrev: DRA
+  language_name: English
+  note: Public Domain
+eng-gb-oeb:
+  name: Open English Bible, Commonwealth Edition
+  abbrev: OEB-CW
+  language_name: English (UK)
+  note: Public Domain
+eng-gb-webbe:
+  name: World English Bible, British Edition
+  abbrev: WEBBE
+  language_name: English (UK)
+  note: Public Domain
+eng-kjv:
+  name: King James Version
+  abbrev: KJV
+  language_name: English
+  note: Public Domain
+eng-us-oeb:
+  name: Open English Bible, US Edition
+  abbrev: OEB-US
+  language_name: English (US)
+  note: Public Domain
+eng-web:
+  name: World English Bible
+  abbrev: WEB
+  language_name: English
+  note: Public Domain
+eng-ylt:
+  name: Young's Literal Translation (NT only)
+  abbrev: YLT
+  language_name: English
+  note: Public Domain
+fin-biblia:
+  name: Finnish Bible
+  abbrev:
+  language_name: Finnish
+  note: Public Domain
+fra-ostervald:
+  name: French Ostervald 1996
+  abbrev:
+  language_name: French
+  note: Public Domain
+grc-septuagint:
+  name: Septuagint (Greek Old Testament)
+  abbrev: LXX
+  language_name: Greek
+  note: Public Domain
+heb-leningrad:
+  name: Hebrew Leningrad Codex
+  abbrev:
+  language_name: Hebrew
+  note: Free to use — see db/open-bibles/README.md#hebrew-leningrad-codex
+hrv-croatian:
+  name: Croatian Bible
+  abbrev:
+  language_name: Croatian
+  note: Public Domain
+hun-karoli:
+  name: Hungarian Károli Bible
+  abbrev:
+  language_name: Hungarian
+  note: Public Domain
+ita-riveduta:
+  name: Italian Riveduta Bible 1927
+  abbrev:
+  language_name: Italian
+  note: Public Domain
+jpn-kougo:
+  name: Japanese Kougo (Colloquial)
+  abbrev:
+  language_name: Japanese
+  note: Public Domain
+kor-korean:
+  name: Korean Bible
+  abbrev:
+  language_name: Korean
+  note: Public Domain
+lat-clementine:
+  name: Clementine Latin Vulgate
+  abbrev:
+  language_name: Latin
+  note: Public Domain
+lav-latvian:
+  name: Latvian Bible
+  abbrev:
+  language_name: Latvian
+  note: Public Domain
+mri-maori:
+  name: Maori Bible
+  abbrev:
+  language_name: Maori
+  note: Public Domain
+nor-norwegian:
+  name: Norwegian Bible
+  abbrev:
+  language_name: Norwegian
+  note: Public Domain
+pol-gdanska:
+  name: Polish Gdańska Bible
+  abbrev:
+  language_name: Polish
+  note: Public Domain
+por-almeida:
+  name: João Ferreira de Almeida
+  abbrev:
+  language_name: Portuguese
+  note: Public Domain
+ron-rccv:
+  name: Protestant Romanian Corrected Cornilescu Version
+  abbrev:
+  language_name: Romanian
+  note: Public Domain
+rus-synodal:
+  name: Russian Synodal Translation
+  abbrev:
+  language_name: Russian
+  note: Public Domain
+spa-bes:
+  name: La Biblia en Español Sencillo
+  abbrev: SPNBES
+  language_name: Spanish
+  note: CC BY 4.0
+spa-pddpt:
+  name: Palabra de Dios para ti / God's Word for You
+  abbrev: SPAPDT
+  language_name: Spanish
+  note: CC BY-SA 4.0
+spa-rv1909:
+  name: Reina Valera 1909
+  abbrev: RV1909
+  language_name: Spanish
+  note: Public Domain
+spa-vbl:
+  name: Versión Biblia Libre / Spanish Free Bible Version
+  abbrev: SPNVBL
+  language_name: Spanish
+  note: CC BY-SA 4.0
+sqi-albanian:
+  name: Albanian Bible
+  abbrev:
+  language_name: Albanian
+  note: Public Domain
+swa-swahili:
+  name: Swahili Bible
+  abbrev:
+  language_name: Swahili
+  note: Public Domain
+swe-swedish:
+  name: Swedish Bible
+  abbrev:
+  language_name: Swedish
+  note: Public Domain
+tgl-tagalog:
+  name: Tagalog Bible (Ang Dating Biblia)
+  abbrev:
+  language_name: Tagalog
+  note: Public Domain
+tha-thai:
+  name: Thai Bible
+  abbrev:
+  language_name: Thai
+  note: Public Domain
+tur-turkish:
+  name: Turkish Bible
+  abbrev:
+  language_name: Turkish
+  note: Public Domain
+vie-cadman:
+  name: Vietnamese Cadman Bible 1934
+  abbrev:
+  language_name: Vietnamese
+  note: Public Domain

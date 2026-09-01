@@ -20,6 +20,24 @@ RSpec.describe BibleImporter do
       expect(translation.language).to eq("eng")
     end
 
+    it "names the translation from config/translations.yml" do
+      described_class.new(file_path: file_path).import!
+
+      expect(Translation.find_by(identifier: "eng-web")).to have_attributes(
+        name: "World English Bible",
+        abbrev: "WEB",
+        language_name: "English"
+      )
+    end
+
+    it "refreshes metadata on an existing translation" do
+      Translation.create!(identifier: "eng-web", name: "eng-web", language: "eng", note: "Public Domain")
+
+      described_class.new(file_path: file_path).import!
+
+      expect(Translation.find_by(identifier: "eng-web").name).to eq("World English Bible")
+    end
+
     it "creates 66 canonical books" do
       described_class.new(file_path: file_path).import!
       expect(Book.count).to eq(66)

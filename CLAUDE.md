@@ -26,6 +26,14 @@ bundle exec rake bible:import
 # Import a single translation
 bundle exec rake "bible:import_one[eng-web]"
 
+# Backfill translation names/abbreviations/licenses from config/translations.yml
+bundle exec rake bible:update_metadata          # all translations
+DRY_RUN=1 bundle exec rake bible:update_metadata
+bundle exec rake "bible:update_metadata[eng-web]"
+
+# Regenerate config/translations.yml from the open-bibles README (after a submodule update)
+bundle exec rake bible:generate_metadata
+
 # Run the server
 bin/rails server
 
@@ -119,6 +127,9 @@ bundle exec rake api_keys:list
 - **PassageLookup** (`app/services/passage_lookup.rb`) — Resolves Bible references (supports both English and localized book names)
 - **VerseOfTheDayLookup** (`app/services/verse_of_the_day_lookup.rb`) — Returns a curated daily verse using a YAML list (`config/verse_of_the_day.yml`)
 - **BibleIndexBuilder** (`app/services/bible_index_builder.rb`) — Builds structural hierarchy (books, chapters, verse counts) for a translation
+- **TranslationMetadata** (`app/services/translation_metadata.rb`) — Reads curated per-translation metadata (name, abbrev, language name, license) from `config/translations.yml`
+- **TranslationMetadataSync** (`app/services/translation_metadata_sync.rb`) — Backfills existing Translation rows from that YAML (`rake bible:update_metadata`)
+- **TranslationMetadataGenerator** (`app/services/translation_metadata_generator.rb`) — Regenerates `config/translations.yml` from the open-bibles README table (dev maintenance)
 - **ApiKeyMailer** (`app/mailers/api_key_mailer.rb`) — Sends approval/rejection emails via Resend
 
 ## Authentication
