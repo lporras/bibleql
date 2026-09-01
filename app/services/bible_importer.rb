@@ -23,7 +23,7 @@ class BibleImporter
     return if books_data.empty?
 
     ActiveRecord::Base.transaction do
-      translation = find_or_create_translation(books_data)
+      translation = find_or_create_translation
       clear_existing_data(translation)
       book_records = ensure_books(books_data)
       create_book_names(translation, books_data, book_records)
@@ -45,13 +45,20 @@ class BibleImporter
 
   private
 
-  def find_or_create_translation(books_data)
-    language = identifier.split("-").first
-    Translation.find_or_create_by!(identifier: identifier) do |t|
-      t.name = identifier
-      t.language = language
-      t.note = "Public Domain"
-    end
+  # Re-imports refresh the metadata rather than skipping it, so a translation
+  # imported before config/translations.yml existed gets its real name here.
+  def find_or_create_translation
+    metadata = TranslationMetadata.for(identifier) || {}
+    translation = Translation.find_or_initialize_by(identifier: identifier)
+    translation.assign_attributes(
+      name: metadata["name"].presence || translation.name.presence || identifier,
+      language: identifier.split("-").first,
+      language_name: metadata["language_name"].presence || translation.language_name,
+      abbrev: metadata["abbrev"].presence || translation.abbrev,
+      note: metadata["note"].presence || translation.note.presence || "Public Domain"
+    )
+    translation.save!
+    translation
   end
 
   def clear_existing_data(translation)

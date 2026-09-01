@@ -1,0 +1,60 @@
+# Metadata for the translations in db/biblelist/, downloaded from
+# https://biblelist.netlify.app/ — see BiblelistImporter.
+#
+# Each file's <bible> root element already carries a name (title/translation) and
+# a copyright notice (status/info); the keys below fill the gaps that markup
+# leaves and pin the identifier, language code and abbreviation. `name` and
+# `note` are optional overrides — omit them to use whatever the XML declares.
+#
+#   file             XML filename inside db/biblelist/
+#   book_names_from  identifier of an imported translation whose localized book
+#                    names are copied over (these files number books 1-66 and
+#                    carry no book names at all)
+#
+# NOTE: every translation here is copyrighted, all rights reserved. Confirm you
+# hold a license before exposing any of them through the public API.
+---
+eng-lsb:
+  file: EnglishLSBBible.xml
+  name: Legacy Standard Bible
+  abbrev: LSB
+  language: eng
+  language_name: English
+  book_names_from: eng-web
+eng-niv:
+  file: EnglishNIVBible.xml
+  name: New International Version
+  abbrev: NIV
+  language: eng
+  language_name: English
+  note: Copyright © 1973, 1978, 1984, 2011 by Biblica, Inc.® All rights reserved worldwide.
+  book_names_from: eng-web
+eng-nlt:
+  file: EnglishNLTBible.xml
+  name: New Living Translation
+  abbrev: NLT
+  language: eng
+  language_name: English
+  note: Copyright © 1996, 2004, 2015 by Tyndale House Foundation. All rights reserved.
+  book_names_from: eng-web
+spa-dhh:
+  file: SpanishDHHBible.xml
+  name: Dios habla hoy
+  abbrev: DHH
+  language: spa
+  language_name: Spanish
+  book_names_from: spa-bes
+spa-lbla:
+  file: SpanishLBLABible.xml
+  name: La Biblia de las Américas
+  abbrev: LBLA
+  language: spa
+  language_name: Spanish
+  book_names_from: spa-bes
+spa-nvi:
+  file: SpanishNVIBible.xml
+  name: Nueva Versión Internacional
+  abbrev: NVI
+  language: spa
+  language_name: Spanish
+  book_names_from: spa-bes

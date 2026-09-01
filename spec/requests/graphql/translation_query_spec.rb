@@ -28,6 +28,16 @@ RSpec.describe "GraphQL translation query", type: :request do
     expect(data["language"]).to eq("eng")
   end
 
+  it "exposes the abbreviation and human-readable language name" do
+    query = '{ translation(identifier: "eng-web") { abbrev languageName note } }'
+    post "/graphql", params: { query: query }, headers: headers
+
+    data = JSON.parse(response.body)["data"]["translation"]
+    expect(data["abbrev"]).to eq("WEB")
+    expect(data["languageName"]).to eq("English")
+    expect(data["note"]).to eq("Public Domain")
+  end
+
   it "returns nested books with localized names" do
     query = '{ translation(identifier: "eng-web") { books { bookId name testament position } } }'
     post "/graphql", params: { query: query }, headers: headers

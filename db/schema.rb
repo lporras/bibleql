@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_10_223938) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_01_000001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "vector"
@@ -97,9 +97,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_10_223938) do
   end
 
   create_table "translations", force: :cascade do |t|
+    t.string "abbrev"
     t.datetime "created_at", null: false
     t.string "identifier", null: false
     t.string "language", null: false
+    t.string "language_name"
     t.string "name", null: false
     t.text "note"
     t.datetime "updated_at", null: false
