@@ -75,6 +75,13 @@ RSpec.describe TranslationMetadataSync do
       expect(spa.reload.name).to eq("spa-bes")
     end
 
+    it "summarizes the run for the rake task" do
+      legacy_translation("eng-web")
+      legacy_translation("xxx-unknown")
+
+      expect(described_class.call.summary).to eq("updated: 1, unchanged: 0, no metadata: 1")
+    end
+
     it "persists nothing on a dry run" do
       translation = legacy_translation("eng-web")
 

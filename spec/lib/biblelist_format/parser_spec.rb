@@ -24,6 +24,11 @@ RSpec.describe BiblelistFormat::Parser do
       )
     end
 
+    it "returns nothing for a document whose root is some other element" do
+      other = described_class.new(StringIO.new(%(<usfx><book id="GEN"/></usfx>)))
+      expect(other.bible_attributes).to eq({})
+    end
+
     it "rewinds the io so the same parser can then read verses" do
       instance = parser
       instance.bible_attributes

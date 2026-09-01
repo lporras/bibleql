@@ -23,13 +23,17 @@ module BiblelistFormat
     # BiblelistImporter decides which keys to prefer.
     def bible_attributes
       @io.rewind
-      reader = Nokogiri::XML::Reader(@io)
-      reader.each do |node|
+      attributes = {}
+
+      # Stops at the first element, so only the head of the file is read.
+      Nokogiri::XML::Reader(@io).each do |node|
         next unless node.node_type == Nokogiri::XML::Reader::TYPE_ELEMENT
 
-        return node.name == ROOT_TAG ? node.attributes : {}
+        attributes = node.attributes if node.name == ROOT_TAG
+        break
       end
-      {}
+
+      attributes
     ensure
       @io.rewind
     end

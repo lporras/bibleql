@@ -99,11 +99,39 @@ RSpec.describe BiblelistImporter do
 
       expect { import }.to raise_error(described_class::MissingReferenceError, /bible:import_one\[eng-web\]/)
     end
+
+    it "flushes verses in batches" do
+      stub_const("#{described_class}::BATCH_SIZE", 2)
+
+      expect(import).to eq(6)
+      expect(Translation.find_by(identifier: "eng-niv").verses.count).to eq(6)
+    end
   end
 
   describe ".identifiers" do
     it "lists every configured translation" do
       expect(described_class.identifiers).to contain_exactly("eng-lsb", "eng-niv", "eng-nlt", "spa-dhh", "spa-lbla", "spa-nvi")
+    end
+  end
+
+  describe ".import_all" do
+    # Only EnglishNIVBible.xml exists in the fixture directory; the other five
+    # configured translations should be reported and skipped, not blow up the run.
+    it "imports what it can and skips the rest" do
+      output = capture_stdout { described_class.import_all(directory: directory) }
+
+      expect(Translation.find_by(identifier: "eng-niv").verses.count).to eq(6)
+      expect(output).to include("Importing eng-niv...", "Done. Verses: 6")
+      expect(output.scan(/SKIPPED/).size).to eq(described_class.identifiers.size - 1)
+    end
+
+    def capture_stdout
+      original = $stdout
+      $stdout = StringIO.new
+      yield
+      $stdout.string
+    ensure
+      $stdout = original
     end
   end
 end
