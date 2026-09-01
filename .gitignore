@@ -39,3 +39,5 @@
 
 # Ignore code coverage output
 /coverage/
+
+.DS_Store
