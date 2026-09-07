@@ -13,6 +13,7 @@ A GraphQL API for querying Bible verses and passages across multiple translation
 - **Localized book names** — query using book names in the translation's language (e.g., `"Mateo 28:18-20"` for Spanish)
 - **Full-text search** across verses
 - **Semantic search** — find verses by meaning using AI embeddings (pgvector + RubyLLM), currently available for spa-rv1909
+- **Bible concordance** — exhaustive word lookup with canonical ordering, per-book distribution, and keyword-in-context snippets
 - **Verse of the Day** — curated daily verse for any translation and date
 - **Language discovery** — list all available languages with translation counts
 - **Translation hierarchy** — browse books, chapters, and verse counts per translation
@@ -72,6 +73,9 @@ bundle exec rake bible:import
 
 # Or import a single translation
 bundle exec rake "bible:import_one[eng-web]"
+
+# Build the concordance index (required for concordance queries)
+bundle exec rake concordance:index
 ```
 
 ### Additional translations
@@ -188,6 +192,8 @@ Response:
 | `randomVerse(translation, testament, books)` | Get a random verse with optional filters |
 | `verseOfTheDay(translation, date)` | Get the curated verse of the day |
 | `bibleIndex(translation)` | Get the structural hierarchy (books, chapters, verse counts) |
+| `concordance(translation, word, book, testament, first, after)` | Exhaustive, canonically-ordered concordance for a word, with per-book counts and KWIC context |
+| `concordanceIndex(translation, prefix, minOccurrences, first)` | Alphabetical word index with occurrence frequencies |
 
 See [docs/example_queries.md](docs/example_queries.md) for complete examples with responses for every query.
 
@@ -203,6 +209,18 @@ The `passage` query supports these reference formats:
 | Full chapter | `"Genesis 1"` |
 | Cross-chapter | `"Romans 12:1,3-4 & 13:2-4"` |
 | Localized names | `"Mateo 28:18-20"`, `"Lucas 3:1-10"` |
+
+### Concordance
+
+Unlike `search`, which returns the top-N most relevant verses, `concordance` returns **every**
+occurrence of a word in canonical order, along with aggregate counts.
+
+Stemming availability varies by language. PostgreSQL ships dictionaries for about 30 languages;
+translations in other languages fall back to exact form matching. Check `translation.hasStemming`
+to know which behavior applies.
+
+Run `rake concordance:index` after importing translations, or concordance queries will return
+an error prompting you to build the index.
 
 ## Rate Limiting
 
