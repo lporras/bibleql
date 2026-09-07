@@ -45,6 +45,8 @@ class BiblelistImporter
   def import!
     book_records = fetch_books
     book_names = reference_book_names
+    translation = nil
+    imported_count = 0
 
     File.open(file_path) do |io|
       parser = BiblelistFormat::Parser.new(io)
@@ -54,9 +56,12 @@ class BiblelistImporter
         translation = upsert_translation(attributes)
         clear_existing_data(translation)
         create_book_names(translation, book_records, book_names)
-        import_verses(translation, parser, book_records)
+        imported_count = import_verses(translation, parser, book_records)
       end
     end
+
+    ConcordanceIndexer.new(translation).call
+    imported_count
   end
 
   private
