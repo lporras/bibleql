@@ -46,8 +46,9 @@ Rails.application.configure do
   # Don't log any deprecations.
   config.active_support.report_deprecations = false
 
-  # Use memory store for caching (no separate cache database needed).
-  config.cache_store = :memory_store
+  # Solid Cache persists across process restarts/deploys — required for the
+  # infinite-TTL concordance cache to actually survive a deploy.
+  config.cache_store = :solid_cache_store
 
   # Use async queue adapter (in-process, no separate queue database needed).
   config.active_job.queue_adapter = :async
