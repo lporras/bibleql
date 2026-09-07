@@ -19,12 +19,8 @@
   <script src="https://cdn.jsdelivr.net/npm/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/graphiql@3.8.3/graphiql.min.js"></script>
 
-  <script>
-    const fetcher = GraphiQL.createFetcher({
-      url: <%= raw graphql_url.to_json %>,
-    });
-
-    const defaultQuery = `# Welcome to BibleQL API Playground!
+  <% default_query = <<~GRAPHQL
+# Welcome to BibleQL API Playground!
 #
 # A GraphQL API for querying Bible verses and passages
 # across 47 translations in 31 languages.
@@ -195,11 +191,39 @@ query BibleIndex {
     chapters { number verseCount }
   }
 }
-`;
+  GRAPHQL
+  playground_version = Digest::SHA256.hexdigest(default_query)[0, 12]
+  %>
+
+  <script>
+    const fetcher = GraphiQL.createFetcher({
+      url: <%= raw graphql_url.to_json %>,
+    });
+
+    const defaultQuery = <%= raw default_query.to_json %>;
 
     const defaultHeaders = JSON.stringify({
       "Authorization": "Bearer YOUR_API_KEY"
     }, null, 2);
+
+    // GraphiQL persists the editor's query/tabs to localStorage and restores
+    // them on every load, ignoring defaultQuery once anything has been saved.
+    // Bumping PLAYGROUND_VERSION (tied to the example queries above) clears
+    // that stale state so returning visitors see updates without needing
+    // an incognito window or a manual cache/cookie clear.
+    (function resetStalePlaygroundState() {
+      const PLAYGROUND_VERSION = <%= raw playground_version.to_json %>;
+      try {
+        if (window.localStorage.getItem("bibleql:playgroundVersion") !== PLAYGROUND_VERSION) {
+          Object.keys(window.localStorage)
+            .filter((key) => key.startsWith("graphiql"))
+            .forEach((key) => window.localStorage.removeItem(key));
+          window.localStorage.setItem("bibleql:playgroundVersion", PLAYGROUND_VERSION);
+        }
+      } catch (e) {
+        // localStorage may be unavailable (e.g. privacy mode); nothing to do.
+      }
+    })();
 
     ReactDOM.render(
       React.createElement(GraphiQL, {
