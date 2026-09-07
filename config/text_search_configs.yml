@@ -1,0 +1,32 @@
+# translation.language → PostgreSQL text search configuration name
+ara: arabic
+cat: catalan
+dan: danish
+deu: german
+ell: greek
+eng: english
+eus: basque
+fin: finnish
+fra: french
+ger: german
+gle: irish
+gre: greek
+hin: hindi
+hun: hungarian
+hye: armenian
+ind: indonesian
+ita: italian
+lit: lithuanian
+nep: nepali
+nld: dutch
+nor: norwegian
+por: portuguese
+ron: romanian
+rus: russian
+spa: spanish
+srp: serbian
+swe: swedish
+tam: tamil
+tur: turkish
+yid: yiddish
+# any other language → "simple" (no stemming, exact form matching)
