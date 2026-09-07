@@ -9,7 +9,7 @@ RSpec.describe "Playground", type: :request do
   # multiple operations are present".
   let(:document) do
     source = Rails.root.join("app/views/playground/show.html.erb").read
-    source[/const defaultQuery = `(.*?)`;/m, 1] or raise "could not extract defaultQuery"
+    source[/<<~GRAPHQL\n(.*?)^\s*GRAPHQL\n/m, 1] or raise "could not extract defaultQuery"
   end
 
   let(:operations) do
