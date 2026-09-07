@@ -135,8 +135,8 @@ query SemanticSearch {
   }
 }
 
-query ConcordanceBasic($translation: String! = "spa-rv1909", $word: String! = "misericordia") {
-  concordance(translation: $translation, word: $word, first: 10) {
+query ConcordanceBasic {
+  concordance(translation: "spa-rv1909", word: "misericordia", first: 10) {
     totalCount
     entry {
       lemma
@@ -156,8 +156,8 @@ query ConcordanceBasic($translation: String! = "spa-rv1909", $word: String! = "m
   }
 }
 
-query ConcordanceByBook($translation: String! = "spa-rv1909", $word: String! = "misericordia", $book: String = "Salmos") {
-  concordance(translation: $translation, word: $word, book: $book, first: 10) {
+query ConcordanceByBook {
+  concordance(translation: "spa-rv1909", word: "misericordia", book: "Salmos", first: 10) {
     totalCount
     edges { node { verse { bookName chapter verse text } } }
   }
