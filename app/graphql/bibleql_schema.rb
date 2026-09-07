@@ -8,6 +8,10 @@ class BibleqlSchema < GraphQL::Schema
     raise GraphQL::ExecutionError, err.message
   end
 
+  rescue_from(ConcordanceLookup::InvalidCursorError) do |err, _obj, _args, _ctx, _field|
+    raise GraphQL::ExecutionError, err.message
+  end
+
   rescue_from(ActiveRecord::RecordNotFound) do |err, _obj, _args, _ctx, _field|
     raise GraphQL::ExecutionError, err.message
   end

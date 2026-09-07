@@ -11,9 +11,17 @@ module Types
     field :note, String, null: true
     field :books, [ Types::LocalizedBookType ], null: false,
       description: "All books available in this translation with localized names"
+    field :has_stemming, Boolean, null: false,
+      description: "Whether concordance queries apply linguistic stemming for this translation. When false, only exact word forms match."
+    field :has_strongs_tagging, Boolean, null: false,
+      description: "Whether verses in this translation carry Strong's number annotations (Phase 2 — always false today)"
+    field :concordance_indexed_at, GraphQL::Types::ISO8601DateTime, null: true,
+      description: "When the concordance index was last built. Null means concordance queries will error until `rake concordance:index` runs."
 
     def books
       BibleIndexBuilder.new(translation: object).call
     end
+
+    def has_strongs_tagging = false
   end
 end

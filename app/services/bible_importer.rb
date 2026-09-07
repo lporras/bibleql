@@ -22,6 +22,7 @@ class BibleImporter
 
     return if books_data.empty?
 
+    translation = nil
     ActiveRecord::Base.transaction do
       translation = find_or_create_translation
       clear_existing_data(translation)
@@ -29,6 +30,8 @@ class BibleImporter
       create_book_names(translation, books_data, book_records)
       import_verses(translation, bible, book_records)
     end
+
+    ConcordanceIndexer.new(translation).call
   rescue => e
     puts "  ERROR: #{e.message} (#{e.class})"
   end

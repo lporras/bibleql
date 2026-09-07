@@ -39,6 +39,15 @@ bundle exec rake biblelist:list                    # show config + import status
 bundle exec rake biblelist:import                  # all
 bundle exec rake "biblelist:import_one[eng-niv]"   # one
 
+# Generate embeddings for semanticSearch (currently only spa-rv1909)
+bundle exec rake "embeddings:generate[spa-rv1909]"
+bundle exec rake "embeddings:clear[spa-rv1909]"
+
+# Concordance index (required for concordance/concordanceIndex queries)
+bundle exec rake concordance:index                  # all translations
+bundle exec rake "concordance:index[spa-rv1909]"    # one translation
+bundle exec rake concordance:status                 # per-translation index status
+
 # Run the server
 bin/rails server
 
@@ -105,10 +114,11 @@ bundle exec rake api_keys:list
 
 ## Key Models
 
-- **Translation** — Bible translation (e.g., "eng-web", "spa-bes")
+- **Translation** — Bible translation (e.g., "eng-web", "spa-bes"), plus `text_search_config`, `has_stemming`, `concordance_indexed_at`
 - **Book** — Canonical book with standardized book_id (e.g., "MAT", "GEN")
 - **BookName** — Localized book name per translation (e.g., "Mateo" for Spanish Matthew)
-- **Verse** — Individual verse with translation, book, chapter, verse_number, text
+- **Verse** — Individual verse with translation, book, chapter, verse_number, text, plus `text_search` (tsvector, GIN-indexed) for concordance
+- **ConcordanceWordIndex** — Per-translation word frequency (`lemma`, `verse_count`, `total_occurrences`) from `ts_stat`, backing `concordanceIndex`
 - **ApiKey** — API key with bcrypt digest, environment-aware prefixes (`bql_live_`/`bql_test_`), usage tracking
 - **ApiKeyRequest** — Self-service API key request (pending/approved/rejected workflow)
 - **AdminUser** — Devise-authenticated admin user for ActiveAdmin panel
@@ -123,8 +133,11 @@ bundle exec rake api_keys:list
 - `chapter(translation, book, chapter)` — Get all verses in a chapter
 - `verse(translation, book, chapter, verse)` — Get a single verse
 - `search(translation, query, limit)` — Full-text search across verses
+- `semanticSearch(query, translation, limit)` — Embedding-based similarity search (pgvector + RubyLLM), currently only spa-rv1909 has embeddings
 - `verseOfTheDay(translation, date)` — Get the curated verse of the day (defaults to today)
 - `bibleIndex(translation)` — Get the structural hierarchy of books, chapters, and verse counts
+- `concordance(translation, word, book, testament, first, after)` — Exhaustive, canonically-ordered concordance for a word, with per-book/testament counts and KWIC context
+- `concordanceIndex(translation, prefix, minOccurrences, first)` — Alphabetical word index with occurrence frequencies
 
 ## Key Services
 
@@ -137,6 +150,11 @@ bundle exec rake api_keys:list
 - **TranslationMetadata** (`app/services/translation_metadata.rb`) — Reads curated per-translation metadata (name, abbrev, language name, license) from `config/translations.yml`
 - **TranslationMetadataSync** (`app/services/translation_metadata_sync.rb`) — Backfills existing Translation rows from that YAML (`rake bible:update_metadata`)
 - **TranslationMetadataGenerator** (`app/services/translation_metadata_generator.rb`) — Regenerates `config/translations.yml` from the open-bibles README table (dev maintenance)
+- **EmbeddingService** (`app/services/embedding_service.rb`) — RubyLLM wrapper generating embeddings for `semanticSearch` and `rake embeddings:generate`
+- **ConcordanceLookup** (`app/services/concordance_lookup.rb`) — Builds concordance results: exhaustive occurrences in canonical order, per-book/testament counts, KWIC context via `ts_headline`. All concordance SQL lives here; resolvers must not contain SQL.
+- **ConcordanceWordIndexLookup** (`app/services/concordance_word_index_lookup.rb`) — Alphabetical word-frequency lookup backing `concordanceIndex`
+- **ConcordanceIndexer** (`app/services/concordance_indexer.rb`) — Populates `verses.text_search` using the per-translation `regconfig` and rebuilds `concordance_word_index`. Called at the end of every import.
+- **TextSearchConfigResolver** (`app/services/text_search_config_resolver.rb`) — Maps a translation's `language` to a PostgreSQL text search configuration; falls back to `simple`
 - **ApiKeyMailer** (`app/mailers/api_key_mailer.rb`) — Sends approval/rejection emails via Resend
 
 ## Authentication
@@ -147,6 +165,16 @@ All `POST /graphql` requests require an API key via the `Authorization: Bearer <
 - **One key per email per environment** (unique constraint)
 - Keys can be created via rake tasks or through the self-service request flow (admin approval required)
 - GraphiQL and Playground have a headers panel for entering the API key
+
+## Concordance Invariants
+
+- Concordance results are **exhaustive and canonically ordered**, never ranked or truncated by
+  relevance. This is the distinction from `search`.
+- `verses.text_search` must be built with the translation's own `regconfig`. Never assume `english`.
+- Concordance cache keys include `translation.concordance_indexed_at`, so a re-import invalidates
+  automatically. Do not add manual cache-clearing logic.
+- `context` contains `<mark>` HTML. Never interpolate user input into it beyond `plainto_tsquery`.
+- Always use `plainto_tsquery`, never `to_tsquery`, for user-supplied words.
 
 ## Skills
 

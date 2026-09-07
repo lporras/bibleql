@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_01_000001) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_07_011203) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "vector"
@@ -96,14 +96,29 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_01_000001) do
     t.index ["position"], name: "index_books_on_position", unique: true
   end
 
+  create_table "concordance_word_index", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "lemma", null: false
+    t.integer "total_occurrences", null: false
+    t.bigint "translation_id", null: false
+    t.datetime "updated_at", null: false
+    t.integer "verse_count", null: false
+    t.index ["translation_id", "lemma"], name: "index_concordance_word_index_on_lemma_pattern", opclass: { lemma: :text_pattern_ops }
+    t.index ["translation_id", "lemma"], name: "index_concordance_word_index_on_translation_id_and_lemma", unique: true
+    t.index ["translation_id"], name: "index_concordance_word_index_on_translation_id"
+  end
+
   create_table "translations", force: :cascade do |t|
     t.string "abbrev"
+    t.datetime "concordance_indexed_at"
     t.datetime "created_at", null: false
+    t.boolean "has_stemming", default: false, null: false
     t.string "identifier", null: false
     t.string "language", null: false
     t.string "language_name"
     t.string "name", null: false
     t.text "note"
+    t.string "text_search_config", default: "simple", null: false
     t.datetime "updated_at", null: false
     t.index ["identifier"], name: "index_translations_on_identifier", unique: true
     t.index ["language"], name: "index_translations_on_language"
@@ -115,11 +130,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_01_000001) do
     t.datetime "created_at", null: false
     t.vector "embedding", limit: 256
     t.text "text", null: false
+    t.tsvector "text_search"
     t.bigint "translation_id", null: false
     t.datetime "updated_at", null: false
     t.integer "verse_number", null: false
     t.index ["book_id"], name: "index_verses_on_book_id"
     t.index ["embedding"], name: "index_verses_on_embedding", opclass: :vector_cosine_ops, using: :hnsw
+    t.index ["text_search"], name: "index_verses_on_text_search", using: :gin
     t.index ["translation_id", "book_id", "chapter", "verse_number"], name: "index_verses_uniqueness", unique: true
     t.index ["translation_id", "book_id", "chapter"], name: "index_verses_on_translation_book_chapter"
     t.index ["translation_id"], name: "index_verses_on_translation_id"
@@ -128,6 +145,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_01_000001) do
   add_foreign_key "api_key_requests", "api_keys"
   add_foreign_key "book_names", "books"
   add_foreign_key "book_names", "translations"
+  add_foreign_key "concordance_word_index", "translations"
   add_foreign_key "verses", "books"
   add_foreign_key "verses", "translations"
 end

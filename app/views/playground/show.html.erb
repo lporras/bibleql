@@ -135,6 +135,46 @@ query SemanticSearch {
   }
 }
 
+query ConcordanceBasic {
+  concordance(translation: "spa-rv1909", word: "misericordia", first: 10) {
+    totalCount
+    entry {
+      lemma
+      surfaceForms
+      totalOccurrences
+      verseCount
+      occurrencesByTestament { old new }
+    }
+    edges {
+      cursor
+      node {
+        verse { bookName chapter verse text }
+        context
+      }
+    }
+    pageInfo { hasNextPage endCursor }
+  }
+}
+
+query ConcordanceByBook {
+  concordance(translation: "spa-rv1909", word: "misericordia", book: "Salmos", first: 10) {
+    totalCount
+    edges { node { verse { bookName chapter verse text } } }
+  }
+}
+
+query ConcordanceAndSemantic {
+  exact: concordance(translation: "spa-rv1909", word: "misericordia", first: 5) {
+    totalCount
+    entry { surfaceForms occurrencesByTestament { old new } }
+    edges { node { verse { bookName chapter verse } context } }
+  }
+  semantic: semanticSearch(query: "la compasión de Dios hacia el pecador", translation: "spa-rv1909", limit: 5) {
+    verse { bookName chapter verse text }
+    similarity
+  }
+}
+
 query VerseOfTheDay {
   verseOfTheDay(translation: "eng-web") {
     reference
