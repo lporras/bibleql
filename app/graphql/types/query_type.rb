@@ -177,6 +177,57 @@ module Types
       BibleIndexBuilder.new(translation: t).call
     end
 
+    CONCORDANCE_COMPLEXITY_DIVISOR = 5
+
+    field :concordance, Types::ConcordanceConnectionType, null: false, connection: false,
+      description: "Exhaustive, canonically-ordered occurrences of a word, with per-book/testament " \
+                   "aggregates and KWIC context. Unlike `search`, this never ranks or truncates by relevance.",
+      complexity: ->(_ctx, args, child_complexity) {
+        first = (args[:first] || ConcordanceLookup::DEFAULT_PAGE_SIZE).clamp(1, ConcordanceLookup::MAX_PAGE_SIZE)
+        (first * child_complexity) / CONCORDANCE_COMPLEXITY_DIVISOR
+      } do
+      argument :translation, String, required: true, description: "Translation identifier (e.g. 'spa-rv1909')"
+      argument :word, String, required: true,
+        description: "Word to look up (matched via the translation's stemming dictionary when available; see hasStemming)"
+      argument :book, String, required: false,
+        description: "Canonical book id (e.g. 'PSA') or localized book name (e.g. 'Salmos')"
+      argument :testament, Types::TestamentType, required: false
+      argument :first, Integer, required: false, default_value: ConcordanceLookup::DEFAULT_PAGE_SIZE
+      argument :after, String, required: false, description: "Opaque cursor from a previous page's pageInfo.endCursor"
+    end
+    def concordance(translation:, word:, first:, book: nil, testament: nil, after: nil)
+      t = Translation.find_by!(identifier: translation)
+      word = word.to_s.strip
+      raise GraphQL::ExecutionError, "word must not be blank" if word.blank?
+      raise GraphQL::ExecutionError, "word must be 100 characters or fewer" if word.length > 100
+      if t.concordance_indexed_at.nil?
+        raise GraphQL::ExecutionError, "Translation '#{translation}' has not been indexed for concordance yet. Run: rake \"concordance:index[#{translation}]\""
+      end
+
+      book_record = book.present? ? find_book(t, book) : nil
+      first = first.clamp(1, ConcordanceLookup::MAX_PAGE_SIZE)
+
+      ConcordanceLookup.new(translation: t, word: word, book: book_record, testament: testament)
+        .call(first: first, after: after)
+    end
+
+    field :concordance_index, [ Types::ConcordanceIndexEntryType ], null: false,
+      description: "Alphabetical word frequency index for a translation." do
+      argument :translation, String, required: true
+      argument :prefix, String, required: false, description: "Only words starting with this prefix (case-insensitive)"
+      argument :min_occurrences, Integer, required: false, default_value: 1
+      argument :first, Integer, required: false, default_value: ConcordanceWordIndexLookup::DEFAULT_PAGE_SIZE
+    end
+    def concordance_index(translation:, first:, prefix: nil, min_occurrences: 1)
+      t = Translation.find_by!(identifier: translation)
+      if t.concordance_indexed_at.nil?
+        raise GraphQL::ExecutionError, "Translation '#{translation}' has not been indexed for concordance yet. Run: rake \"concordance:index[#{translation}]\""
+      end
+
+      ConcordanceWordIndexLookup.new(translation: t, prefix: prefix, min_occurrences: min_occurrences)
+        .call(first: first)
+    end
+
     private
 
     def find_book(translation, book_identifier)
