@@ -12,6 +12,7 @@ A GraphQL API for querying Bible verses and passages across multiple translation
 - **Flexible passage lookup** — single verses, ranges, multi-ranges (e.g., `"Matthew 25:31-33,46"`)
 - **Localized book names** — query using book names in the translation's language (e.g., `"Mateo 28:18-20"` for Spanish)
 - **Full-text search** across verses
+- **Semantic search** — find verses by meaning using AI embeddings (pgvector + RubyLLM), currently available for spa-rv1909
 - **Verse of the Day** — curated daily verse for any translation and date
 - **Language discovery** — list all available languages with translation counts
 - **Translation hierarchy** — browse books, chapters, and verse counts per translation
@@ -183,6 +184,7 @@ Response:
 | `chapter(translation, book, chapter)` | Get all verses in a chapter |
 | `verse(translation, book, chapter, verse)` | Get a single verse |
 | `search(translation, query, limit)` | Full-text search across verses |
+| `semanticSearch(query, translation, limit)` | Search verses by semantic meaning using AI embeddings |
 | `randomVerse(translation, testament, books)` | Get a random verse with optional filters |
 | `verseOfTheDay(translation, date)` | Get the curated verse of the day |
 | `bibleIndex(translation)` | Get the structural hierarchy (books, chapters, verse counts) |

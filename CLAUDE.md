@@ -39,6 +39,10 @@ bundle exec rake biblelist:list                    # show config + import status
 bundle exec rake biblelist:import                  # all
 bundle exec rake "biblelist:import_one[eng-niv]"   # one
 
+# Generate embeddings for semanticSearch (currently only spa-rv1909)
+bundle exec rake "embeddings:generate[spa-rv1909]"
+bundle exec rake "embeddings:clear[spa-rv1909]"
+
 # Run the server
 bin/rails server
 
@@ -123,6 +127,7 @@ bundle exec rake api_keys:list
 - `chapter(translation, book, chapter)` — Get all verses in a chapter
 - `verse(translation, book, chapter, verse)` — Get a single verse
 - `search(translation, query, limit)` — Full-text search across verses
+- `semanticSearch(query, translation, limit)` — Embedding-based similarity search (pgvector + RubyLLM), currently only spa-rv1909 has embeddings
 - `verseOfTheDay(translation, date)` — Get the curated verse of the day (defaults to today)
 - `bibleIndex(translation)` — Get the structural hierarchy of books, chapters, and verse counts
 
@@ -137,6 +142,7 @@ bundle exec rake api_keys:list
 - **TranslationMetadata** (`app/services/translation_metadata.rb`) — Reads curated per-translation metadata (name, abbrev, language name, license) from `config/translations.yml`
 - **TranslationMetadataSync** (`app/services/translation_metadata_sync.rb`) — Backfills existing Translation rows from that YAML (`rake bible:update_metadata`)
 - **TranslationMetadataGenerator** (`app/services/translation_metadata_generator.rb`) — Regenerates `config/translations.yml` from the open-bibles README table (dev maintenance)
+- **EmbeddingService** (`app/services/embedding_service.rb`) — RubyLLM wrapper generating embeddings for `semanticSearch` and `rake embeddings:generate`
 - **ApiKeyMailer** (`app/mailers/api_key_mailer.rb`) — Sends approval/rejection emails via Resend
 
 ## Authentication
