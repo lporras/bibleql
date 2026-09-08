@@ -1,9 +1,10 @@
 # frozen_string_literal: true
 
-# Imports the translations in db/holy-bible-xml/ (the Holy-Bible-XML-Format
-# submodule, https://github.com/lporras/Holy-Bible-XML-Format) — a 1000+ file,
-# 200+ language collection using the same <bible><testament><book number> XML
-# shape as db/biblelist/, parsed by the same BiblelistFormat::Parser.
+# Imports the translations hand-downloaded into db/holy-bible-xml/ (gitignored,
+# not a git submodule — see docs/holy-bible-xml-identifiers.md) from
+# https://github.com/lporras/Holy-Bible-XML-Format, a 1000+ file, 200+ language
+# collection using the same <bible><testament><book number> XML shape as
+# db/biblelist/, parsed by the same BiblelistFormat::Parser.
 #
 # Unlike BiblelistImporter, there is no per-file metadata table: identifier,
 # language code, and abbreviation are all derived from the filename itself by
