@@ -39,11 +39,14 @@ bundle exec rake biblelist:list                    # show config + import status
 bundle exec rake biblelist:import                  # all
 bundle exec rake "biblelist:import_one[eng-niv]"   # one
 
-# Import the db/holy-bible-xml/ submodule (1000+ files, 200+ languages, same XML shape as
-# biblelist; identifier/language/abbrev derived from the filename, not a config file)
-git submodule update --init db/holy-bible-xml
-bundle exec rake holy_bible_xml:import                  # all not already imported
+# Import from Holy-Bible-XML-Format (github.com/lporras/Holy-Bible-XML-Format, 1000+ files,
+# 200+ languages, same XML shape as biblelist; identifier/language/abbrev derived from the
+# filename, not a config file). NOT a git submodule (Render syncs every registered submodule
+# on deploy) — download only the files you want into db/holy-bible-xml/ (gitignored), e.g.:
+curl -fsSL -o db/holy-bible-xml/ArabicSVDBible.xml \
+  https://raw.githubusercontent.com/lporras/Holy-Bible-XML-Format/master/ArabicSVDBible.xml
 bundle exec rake "holy_bible_xml:import_one[ara-svd]"    # one, by derived identifier
+bundle exec rake holy_bible_xml:import                  # every file already downloaded, skipping duplicates
 
 # Generate embeddings for semanticSearch (currently only spa-rv1909)
 bundle exec rake "embeddings:generate[spa-rv1909]"
@@ -150,7 +153,7 @@ bundle exec rake api_keys:list
 - **BibleImporter** (`app/services/bible_importer.rb`) — Imports Bible translations from XML files using bible_parser
 - **BiblelistImporter** (`app/services/biblelist_importer.rb`) — Imports the `db/biblelist/` translations (from biblelist.netlify.app); metadata in `config/biblelist_translations.yml`, book names copied from a same-language translation
 - **BiblelistFormat** (`lib/biblelist_format/`) — A `bible_parser` format plugin (`Base::Parser`/`Base::Document` subclasses) for the `<bible><testament><book number>` XML shape; not registered in `BibleParser::PARSERS`, instantiate directly
-- **HolyBibleXmlImporter** (`app/services/holy_bible_xml_importer.rb`) — Imports the `db/holy-bible-xml/` submodule (github.com/lporras/Holy-Bible-XML-Format, 1000+ files); same XML shape/parser as `BiblelistFormat`, but no metadata config file exists for it — identifier/language/abbrev come from `HolyBibleXmlFilenameParser` instead; skips any identifier already in the database
+- **HolyBibleXmlImporter** (`app/services/holy_bible_xml_importer.rb`) — Imports files hand-downloaded into `db/holy-bible-xml/` (gitignored, not a submodule — see docs/holy-bible-xml-identifiers.md) from github.com/lporras/Holy-Bible-XML-Format (1000+ files); same XML shape/parser as `BiblelistFormat`, but no metadata config file exists for it — identifier/language/abbrev come from `HolyBibleXmlFilenameParser` instead; skips any identifier already in the database
 - **HolyBibleXmlFilenameParser** (`app/services/holy_bible_xml_filename_parser.rb`) — Derives identifier/language code/variant/abbrev from a Holy-Bible-XML-Format filename (e.g. `ArabicSVDBible.xml` → `ara-svd`), using `config/language_codes.yml` with a slug fallback for unmapped languages; see `docs/holy-bible-xml-identifiers.md` for the full algorithm
 - **PassageLookup** (`app/services/passage_lookup.rb`) — Resolves Bible references (supports both English and localized book names)
 - **VerseOfTheDayLookup** (`app/services/verse_of_the_day_lookup.rb`) — Returns a curated daily verse using a YAML list (`config/verse_of_the_day.yml`)

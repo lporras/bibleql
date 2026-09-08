@@ -1,11 +1,26 @@
 # How Holy-Bible-XML-Format identifiers are derived
 
-`db/holy-bible-xml/` (the [Holy-Bible-XML-Format](https://github.com/lporras/Holy-Bible-XML-Format)
-submodule) has no per-file metadata table like `config/biblelist_translations.yml` — with 1,000+
+`db/holy-bible-xml/` is a gitignored local directory (not a git submodule — see below) where you
+manually download individual files from
+[Holy-Bible-XML-Format](https://github.com/lporras/Holy-Bible-XML-Format) before importing them.
+That source has no per-file metadata table like `config/biblelist_translations.yml` — with 1,000+
 files across 200+ languages, hand-curating one entry per file isn't practical. Instead,
 `HolyBibleXmlFilenameParser` derives everything (`Translation#identifier`, `#language`,
 `#language_name`, `#abbrev`) straight from the filename. This is a **best-effort** heuristic, not
 a lookup — it gets the common cases right and degrades gracefully on the rest.
+
+## Why this isn't a git submodule
+
+It was originally wired up as one, but Render (and most git-based deploy pipelines) automatically
+fetch every submodule registered in `.gitmodules` on every deploy — there's no per-submodule
+opt-out. A 1,000+ file source can't be a submodule without either breaking or badly slowing down
+every deploy. Instead, `db/holy-bible-xml/` is listed in `.gitignore`, and you download only the
+specific files you actually want to import:
+
+```bash
+curl -fsSL -o db/holy-bible-xml/ArabicSVDBible.xml \
+  https://raw.githubusercontent.com/lporras/Holy-Bible-XML-Format/master/ArabicSVDBible.xml
+```
 
 ## The algorithm
 

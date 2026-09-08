@@ -41,3 +41,10 @@
 /coverage/
 
 .DS_Store
+
+# Holy-Bible-XML-Format translations (see docs/holy-bible-xml-identifiers.md) are
+# downloaded here by hand, one file at a time, for local/offline import — never a
+# git submodule (Render syncs every registered submodule on deploy, so a 1000+
+# file source can't be one) and never committed to this repo.
+/db/holy-bible-xml/*
+!/db/holy-bible-xml/.gitkeep

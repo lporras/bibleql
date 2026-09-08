@@ -91,10 +91,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
 
-      # Only db/open-bibles is needed for specs. db/holy-bible-xml is a separate,
-      # 1000+ file submodule meant to be cloned locally for manual imports only
-      # (see README) — never check it out here, both for CI speed and because its
-      # git@github.com SSH URL isn't reachable from the runner anyway.
+      # db/open-bibles is the only git submodule specs need. (Holy-Bible-XML-Format
+      # is a separate, 1000+ file source that's deliberately NOT a submodule — see
+      # docs/holy-bible-xml-identifiers.md — so there's nothing to init for it here.)
       - name: Check out open-bibles submodule
         run: git submodule update --init --depth=1 db/open-bibles
 
