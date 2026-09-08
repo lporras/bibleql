@@ -38,6 +38,7 @@ The interactive GraphQL playground is available at [`/playground`](https://bible
 - [bible_ref](https://github.com/seven1m/bible_ref) — parses Bible reference strings
 - [open-bibles](https://github.com/seven1m/open-bibles) — public domain Bible translations (git submodule)
 - [Bible List](https://biblelist.netlify.app/) — searchable collection of 1,550+ XML Bibles, source of the additional translations in `db/biblelist/`
+- [Holy-Bible-XML-Format](https://github.com/lporras/Holy-Bible-XML-Format) — 1,000+ XML Bibles across 200+ languages (git submodule)
 - Docker + [Kamal](https://kamal-deploy.org) for deployment
 
 ## Client Libraries
@@ -99,6 +100,41 @@ already-imported translation of the same language (`book_names_from` in the YAML
 
 > **Note:** most translations available through Bible List are copyrighted. Confirm you hold the
 > necessary rights before exposing any of them through a public API.
+
+### Holy-Bible-XML-Format translations
+
+A third source, [Holy-Bible-XML-Format](https://github.com/lporras/Holy-Bible-XML-Format), is a
+1,000+ file, 200+ language collection wired up as a real git submodule — its XML files are never
+committed to this repo, only pulled locally when you want to run an import:
+
+```bash
+git submodule update --init db/holy-bible-xml
+
+bundle exec rake holy_bible_xml:import                    # import everything not already imported
+bundle exec rake "holy_bible_xml:import_one[ara-svd]"      # import a single translation
+```
+
+These files use the same XML shape as `db/biblelist/`'s, so they're parsed by the same
+`BiblelistFormat::Parser`. Unlike `db/biblelist/`, there's no hand-curated metadata file for
+1,000+ translations — `HolyBibleXmlFilenameParser` derives each translation's identifier,
+language code, and abbreviation straight from its filename (e.g. `ArabicSVDBible.xml` →
+`ara-svd`), falling back to a slugified language name for anything not in
+`config/language_codes.yml`. See [`docs/holy-bible-xml-identifiers.md`](docs/holy-bible-xml-identifiers.md)
+for exactly how that derivation works. Both import tasks skip any identifier that's already in
+the database, so re-running them never creates duplicates. Book names are copied from whichever
+already-imported translation of the same language has the most of them, falling back to the
+canonical book name — run `rake bible:import` first.
+
+Since this submodule isn't checked out in CI or production by default, these tasks are meant to
+be run locally (or from any machine with the submodule cloned) against whichever database you
+point `DATABASE_URL`/`RAILS_ENV` at, including production:
+
+```bash
+RAILS_ENV=production DATABASE_URL=<production-db-url> bundle exec rake holy_bible_xml:import
+```
+
+> **Note:** confirm you hold the necessary rights before exposing any imported translation through
+> a public API.
 
 ## Running Locally
 

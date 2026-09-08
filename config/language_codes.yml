@@ -1,0 +1,89 @@
+# Language name (as it appears in Holy-Bible-XML-Format filenames, e.g.
+# "Afrikaans1983Bible.xml") → ISO 639-3 code, used by HolyBibleXmlFilenameParser
+# to derive Translation#language and the translation identifier.
+#
+# Seeded from the reverse of config/text_search_configs.yml plus other common
+# languages seen in the source repo's file listing. Not exhaustive — the
+# source has 200+ languages; anything missing here falls back to a slugified
+# version of its own name (safe: TextSearchConfigResolver already falls back
+# to "simple" for any language code it doesn't recognize). Extend as needed.
+---
+Afrikaans: afr
+Albanian: sqi
+Amharic: amh
+Arabic: ara
+Aramaic: arc
+Armenian: hye
+Azerbaijan: aze
+Balochi: bal
+Bashkir: bak
+Basque: eus
+Belarusian: bel
+Bemba: bem
+Bengali: ben
+Bulgarian: bul
+Catalan: cat
+Chinese: zho
+Croatian: hrv
+Czech: ces
+Danish: dan
+Dutch: nld
+English: eng
+Estonian: est
+Finnish: fin
+French: fra
+Georgian: kat
+German: deu
+Greek: ell
+Gujarati: guj
+Hausa: hau
+Hebrew: heb
+Hindi: hin
+Hungarian: hun
+Icelandic: isl
+Indonesian: ind
+Irish: gle
+Italian: ita
+Japanese: jpn
+Kannada: kan
+Kazakh: kaz
+Khmer: khm
+Korean: kor
+Kurdish: kur
+Lao: lao
+Latvian: lav
+Lithuanian: lit
+Macedonian: mkd
+Malay: msa
+Malayalam: mal
+Marathi: mar
+Mongolian: mon
+Nepali: nep
+Norwegian: nor
+Pashto: pus
+Persian: fas
+Polish: pol
+Portuguese: por
+Punjabi: pan
+Romanian: ron
+Russian: rus
+Serbian: srp
+Sinhala: sin
+Slovak: slk
+Slovenian: slv
+Somali: som
+Spanish: spa
+Swahili: swa
+Swedish: swe
+Tagalog: tgl
+Tajik: tgk
+Tamil: tam
+Telugu: tel
+Thai: tha
+Turkish: tur
+Ukrainian: ukr
+Urdu: urd
+Uzbek: uzb
+Vietnamese: vie
+Yiddish: yid
+Zulu: zul
