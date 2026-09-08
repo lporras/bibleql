@@ -133,6 +133,20 @@ point `DATABASE_URL`/`RAILS_ENV` at, including production:
 RAILS_ENV=production DATABASE_URL=<production-db-url> bundle exec rake holy_bible_xml:import
 ```
 
+`HolyBibleXmlImporter` builds the concordance index automatically as the last step of every
+import (same as every other importer), so freshly imported translations are immediately
+queryable via `concordance`/`concordanceIndex`. If you ever need to rebuild the index for a
+specific translation by hand — e.g. after editing `config/language_codes.yml` and re-importing,
+or to pick up a new `text_search_config` — target it directly by identifier instead of
+reindexing everything:
+
+```bash
+bundle exec rake "concordance:index[spa-ntv]"
+bundle exec rake "concordance:index[spa-tla]"
+
+bundle exec rake concordance:status   # confirm indexed_at / stemming per translation
+```
+
 > **Note:** confirm you hold the necessary rights before exposing any imported translation through
 > a public API.
 
