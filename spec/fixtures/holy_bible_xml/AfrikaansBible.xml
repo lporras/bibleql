@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bible translation="Afrikaans Fixture" status="Fixture copyright notice">
+  <testament name="Old">
+    <book number="1">
+      <chapter number="1">
+        <verse number="1">Fixture verse Genesis 1:1 in Afrikaans.</verse>
+      </chapter>
+    </book>
+  </testament>
+</bible>

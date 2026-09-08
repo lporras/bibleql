@@ -1,3 +1,6 @@
 [submodule "db/open-bibles"]
 	path = db/open-bibles
 	url = https://github.com/seven1m/open-bibles.git
+[submodule "db/holy-bible-xml"]
+	path = db/holy-bible-xml
+	url = git@github.com:lporras/Holy-Bible-XML-Format.git
