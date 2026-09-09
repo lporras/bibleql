@@ -1,0 +1,76 @@
+---
+id: languages
+title: Languages
+sidebar_position: 2
+description: Discovering available languages and the translations within each.
+---
+
+import ApiExample from "@site/src/components/ApiExample";
+
+# Languages
+
+Every translation belongs to a language, identified by a three-letter
+[ISO 639-3](https://iso639-3.sil.org) code. The `languages` query is the entry point when you
+want to offer users a choice of language before a choice of translation.
+
+## List languages
+
+<ApiExample op="languages" />
+
+Each entry carries a `code`, a `translationCount`, and the `translations` themselves if you ask
+for them:
+
+```graphql
+query {
+  languages {
+    code
+    translationCount
+    translations {
+      identifier
+      name
+      note
+    }
+  }
+}
+```
+
+That is usually all you need to populate a two-step language → translation picker in one
+request.
+
+## Language codes are not locales
+
+A common source of confusion:
+
+| | Example | Used for |
+|---|---|---|
+| Language code | `spa`, `eng`, `deu` | The `language` field on a translation |
+| Translation identifier | `spa-rv1909`, `eng-web` | The `translation` argument |
+| Documentation locale | `es`, `en` | Which language *this site* is written in |
+
+Only the middle row is accepted by query arguments. Passing `spa` where a translation
+identifier is expected returns a not-found error.
+
+## Human-readable names
+
+`code` is a machine identifier, not a label to show users. For display, read `languageName` on
+a translation:
+
+```graphql
+query {
+  translations {
+    identifier
+    language
+    languageName
+    name
+  }
+}
+```
+
+`languageName` is more specific than the code where it needs to be — English translations
+distinguish `English`, `English (UK)` and `English (US)` even though all three share the `eng`
+code.
+
+:::note Counts change
+`translationCount` reflects what is loaded right now. Query it rather than hard-coding a
+number, which will go stale as translations are added.
+:::

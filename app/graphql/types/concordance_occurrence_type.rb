@@ -2,7 +2,9 @@
 
 module Types
   class ConcordanceOccurrenceType < Types::BaseObject
-    field :verse, Types::VerseType, null: false
+    description "A single occurrence of a word in one verse, with surrounding context"
+
+    field :verse, Types::VerseType, null: false, description: "The verse containing the word"
     field :context, String, null: false, resolver_method: :highlighted_context,
       description: "Keyword-in-context snippet. Contains <mark> HTML tags around the matched term — sanitize before rendering as HTML."
     field :strongs, Types::StrongsEntryType, null: true,

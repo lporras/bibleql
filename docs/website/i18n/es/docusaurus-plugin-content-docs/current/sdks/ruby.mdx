@@ -1,0 +1,169 @@
+---
+id: ruby
+title: Ruby
+sidebar_position: 2
+description: Usar la gema bibleql-ruby.
+---
+
+import { GRAPHQL_ENDPOINT, SDK } from "@site/src/constants";
+
+# Ruby
+
+Un cliente idiomático de Ruby para BibleQL.
+
+- **Paquete:** <a href={SDK.ruby.registry}>`bibleql-ruby` en RubyGems</a>
+- **Código:** <a href={SDK.ruby.repo}>github.com/lporras/bibleql-ruby</a>
+- **Licencia:** MIT
+
+## Instalación
+
+```ruby title="Gemfile"
+gem "bibleql-ruby"
+```
+
+```bash
+bundle install
+```
+
+O directamente:
+
+```bash
+gem install bibleql-ruby
+```
+
+## Configuración
+
+```ruby
+require "bibleql"
+
+BibleQL.configure do |config|
+  config.api_key = ENV.fetch("BIBLEQL_API_KEY")
+  config.default_translation = "spa-rv1909"
+  config.api_url = "https://bibleql.org/graphql"
+  config.timeout = 30
+end
+
+client = BibleQL.client
+```
+
+O por instancia, que es más fácil de testear:
+
+```ruby
+client = BibleQL::Client.new(
+  api_key: ENV.fetch("BIBLEQL_API_KEY"),
+  default_translation: "spa-rv1909"
+)
+```
+
+:::warning Configura `api_url` explícitamente
+El valor por defecto de la gema apunta a una URL alojada en Render, no a
+<code>{GRAPHQL_ENDPOINT}</code>. Fíjalo si quieres el endpoint canónico.
+:::
+
+Para saber dónde va esto en una aplicación Rails, cómo usar las credenciales de Rails y cuándo
+elegir un cliente global o por instancia, consulta
+[Configurar los SDKs](/sdks/configuration).
+
+Todos los ejemplos siguientes asumen un `client` creado como arriba.
+
+## Leer pasajes
+
+```ruby
+passage = client.passage("Juan 3:16")
+
+passage.reference       # => "Juan 3:16"
+passage.text            # => "Porque de tal manera amó Dios al mundo..."
+passage.translation_id  # => "spa-rv1909"
+passage.verses          # => [#<BibleQL::Verse ...>]
+```
+
+Cambia la traducción por llamada:
+
+```ruby
+client.passage("John 3:16", translation: "eng-web")
+```
+
+## Versículos y capítulos
+
+```ruby
+verse = client.verse("MAT", 5, 3)
+verse.book_name  # => "Mateo"
+verse.chapter    # => 5
+verse.verse      # => 3
+verse.text
+
+verses = client.chapter("MAT", 5)
+```
+
+## Búsqueda
+
+```ruby
+results = client.search("amor", limit: 5)
+
+results.each do |verse|
+  puts "#{verse.book_name} #{verse.chapter}:#{verse.verse}"
+  puts verse.text
+end
+```
+
+Recuerda que esto es coincidencia de subcadenas, no stemming — consulta
+[Buscar en la Biblia](/guides/search).
+
+## Versículo aleatorio
+
+```ruby
+client.random_verse
+client.random_verse(testament: "NT")
+client.random_verse(books: "PSA")
+```
+
+`testament` acepta las cadenas `"OT"` y `"NT"`. Pasar `books` hace que `testament` se ignore —
+consulta
+[Comportamiento de la API](/reference/api-behavior#los-filtros-se-combinan-de-forma-distinta-según-la-query).
+
+## Versículo del día
+
+```ruby
+client.verse_of_the_day
+client.verse_of_the_day(date: "2026-01-01")
+```
+
+Devuelve un `Passage`, que puede contener más de un versículo.
+
+## Descubrimiento
+
+```ruby
+client.translations              # => [#<BibleQL::Translation ...>]
+client.translation("spa-rv1909") # con .books
+client.languages                 # .code, .translation_count, .translations
+client.books                     # los 66 canónicos
+client.bible_index               # .chapters => [#<BibleQL::Chapter number= verse_count=>]
+```
+
+## Gestión de errores
+
+```ruby
+begin
+  client.passage("Nonexistent 1:1")
+rescue BibleQL::NotFoundError => e
+  warn "No encontrado: #{e.message}"
+rescue BibleQL::AuthenticationError
+  warn "Revisa BIBLEQL_API_KEY"
+rescue BibleQL::RateLimitError
+  warn "Límite superado — espera antes de reintentar"
+rescue BibleQL::TimeoutError, BibleQL::ConnectionError => e
+  warn "Problema de red transitorio: #{e.message}"
+rescue BibleQL::QueryError => e
+  warn "Error de GraphQL: #{e.message}"
+  warn e.errors.inspect # el arreglo de errores original
+end
+```
+
+`BibleQL::ServerError` cubre las respuestas 5xx. Consulta [Errores](/reference/errors) para
+ver a qué corresponde cada uno.
+
+## No cubierto por la gema
+
+`semanticSearch`, `concordance` y `concordanceIndex` no tienen métodos en la versión actual.
+Usa los documentos GraphQL de [Búsqueda semántica](/guides/semantic-search) y
+[Concordancia](/guides/concordance) con cualquier cliente HTTP.

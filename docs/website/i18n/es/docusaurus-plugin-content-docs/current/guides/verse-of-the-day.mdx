@@ -1,0 +1,70 @@
+---
+id: verse-of-the-day
+title: Versículo del día
+sidebar_position: 8
+description: Un versículo diario curado, en cualquier traducción y para cualquier fecha.
+---
+
+import ApiExample from "@site/src/components/ApiExample";
+
+# Versículo del día
+
+`verseOfTheDay` devuelve un versículo curado para una fecha dada. La selección proviene de una
+lista mantenida a mano, así que es una elección deliberada y no aleatoria: la misma fecha
+devuelve siempre la misma referencia.
+
+<ApiExample op="verseOfTheDay" />
+
+## Argumentos
+
+| Argumento | Por defecto | Notas |
+|---|---|---|
+| `translation` | `eng-web` | Cualquier identificador de traducción |
+| `date` | hoy | Una fecha ISO 8601, `AAAA-MM-DD` |
+
+## Una fecha concreta
+
+```graphql
+query {
+  verseOfTheDay(translation: "spa-rv1909", date: "2026-01-01") {
+    reference
+    text
+    translationName
+  }
+}
+```
+
+Como la curación depende de la fecha y el texto de la traducción, ambas cosas son
+independientes: el versículo de un mismo día se puede mostrar en cualquier traducción.
+
+## Devuelve un Passage
+
+El tipo de retorno es `Passage`, no `Verse` — el versículo del día es a veces un rango corto en
+lugar de un solo versículo. Así que `verses` puede contener más de una entrada, y `text` es la
+forma unida:
+
+```graphql
+query {
+  verseOfTheDay {
+    reference
+    text
+    verses {
+      bookName
+      chapter
+      verse
+      text
+    }
+  }
+}
+```
+
+No asumas que `verses` tiene exactamente un elemento.
+
+## Caché
+
+El resultado para una fecha y traducción dadas es estable, lo que lo hace ideal para cachear el
+resto del día. Un widget diario debería pedirlo una vez, no una vez por visita.
+
+Si lo muestras en la zona horaria del usuario, ten en cuenta que el `date` por defecto se
+resuelve en el servidor. Para cualquier cosa sensible a la zona horaria, pasa `date`
+explícitamente en lugar de confiar en el valor por defecto.

@@ -1,0 +1,106 @@
+---
+id: references
+title: Bible References
+sidebar_position: 3
+description: Every reference format the passage query accepts, and how each one is normalized.
+---
+
+import ApiExample from "@site/src/components/ApiExample";
+
+# Bible References
+
+The `passage` query takes a `reference` string and resolves it to verses. Two parsers sit
+behind it: one for English book names, and one for names localized to the translation. They
+support slightly different things, which is worth knowing before you rely on a format.
+
+## Supported formats
+
+Every example below is verified against the parser.
+
+| Format | Example | Resolves to |
+|---|---|---|
+| Single verse | `John 3:16` | one verse |
+| Verse range | `John 3:16-18` | verses 16, 17, 18 |
+| Multiple ranges | `Matthew 25:31-33,46` | verses 31–33 and 46 |
+| Whole chapter | `Genesis 1` | every verse in the chapter |
+| Cross-chapter | `Romans 12:1,3-4 & 13:2-4` | 12:1, 12:3–4, 13:2–4 |
+| Localized name | `Mateo 28:18-20` | verses 18–20, Spanish translation |
+
+<ApiExample op="passage" />
+
+## References are normalized on the way out
+
+The `reference` field in the response is the *parsed* form, which is not always what you sent:
+
+| You send | You get back |
+|---|---|
+| `Romans 12:1,3-4 & 13:2-4` | `Romans 12:1,3-4,13:2-4` |
+| `Psalm 23` | `Psalms 23` |
+| `John 3:16` | `John 3:16` |
+
+The `&` separator collapses to a comma, and book names are canonicalized — `Psalm` becomes
+`Psalms`. If you need to echo the user's original input back to them, keep your own copy; do
+not rely on `reference` round-tripping unchanged.
+
+### Abbreviations are accepted
+
+English book names can be abbreviated, and the response comes back with the full name:
+
+| You send | You get back |
+|---|---|
+| `Jhn 3:16` | `John 3:16` |
+| `Jn 3:16` | `John 3:16` |
+| `Gen 1:1` | `Genesis 1:1` |
+| `1 Jn 1:1` | `1 John 1:1` |
+
+This makes user-typed input far more forgiving than it looks — you generally do not need to
+normalize abbreviations yourself before sending them.
+
+## Localized references
+
+When the book name matches a name in the translation's own language, the localized parser
+handles it:
+
+```graphql
+query {
+  passage(translation: "spa-rv1909", reference: "Mateo 28:18-20") {
+    reference
+    text
+  }
+}
+```
+
+Localized names are matched case-insensitively, so `mateo` works as well as `Mateo`.
+
+:::warning Localized references cannot span chapters
+The localized parser supports single verses, ranges, and comma-separated multi-ranges — but
+all within **one** chapter. `Romanos 12:1 & 13:2` will not resolve. Cross-chapter references
+work only with English book names.
+
+For a cross-chapter passage in a non-English translation, either issue one query per chapter,
+or use the English book name with the non-English `translation` — the text you get back is
+still from that translation.
+:::
+
+See [Localized Book Names](/guides/localized-book-names) for how to discover the names a
+translation accepts.
+
+## Whole chapters
+
+`Genesis 1` returns the entire chapter. For a long chapter that is a lot of text in one
+response, so prefer [`chapter`](/guides/bible-index) when you want the verses as a list, and
+`passage` when you want them joined as prose.
+
+## When a reference does not resolve
+
+An unparseable or out-of-range reference returns a GraphQL error rather than an empty result:
+
+```json
+{ "errors": [{ "message": "Invalid reference: 'Nonexistent 1:1'" }] }
+```
+
+A reference that parses but points outside the text — `John 3:999` — is *not* an error. It
+resolves to an empty `verses` list and an empty `text`, so check for emptiness rather than
+relying on an exception.
+
+See [Errors](/reference/errors) for the full set of failure shapes.

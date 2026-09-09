@@ -1,0 +1,82 @@
+---
+id: semantic-search
+title: Semantic Search
+sidebar_position: 6
+description: Finding verses by meaning using embeddings, and the one translation that supports it.
+---
+
+import ApiExample from "@site/src/components/ApiExample";
+import { SEMANTIC_SEARCH_TRANSLATION } from "@site/src/constants";
+
+# Semantic Search
+
+`semanticSearch` finds verses by **meaning** rather than wording. You describe an idea and get
+back verses that express it, even when they share no words with your query.
+
+:::warning Only one translation has embeddings
+Semantic search requires precomputed embeddings, and currently only
+<code>{SEMANTIC_SEARCH_TRANSLATION}</code> (Reina Valera 1909, Spanish) has them.
+
+Querying any other translation returns an **empty array, not an error** — so an English
+semantic search silently gives you nothing. This is the single most confusing behaviour in the
+API; check the translation before assuming your query is wrong.
+:::
+
+Because of that, the example below pins `spa-rv1909` regardless of which language you are
+reading these docs in.
+
+<ApiExample op="semanticSearch" />
+
+## How it works
+
+Your query text is converted to an embedding vector, then compared against stored verse
+embeddings by cosine distance. Results come back ordered by `similarity`, highest first.
+
+`similarity` runs from `0.0` to `1.0`. It is a **relative** measure — useful for ranking, but
+the absolute number means little on its own.
+
+Do not assume high scores. In the example above, a query that matches the text closely still
+tops out around `0.66`, and the fifth result is `0.56`. A cutoff of `0.7` would have discarded
+every one of them. Calibrate any threshold against real results for your own queries rather
+than picking a round number.
+
+## Arguments
+
+| Argument | Default | Notes |
+|---|---|---|
+| `query` | required | Natural language, in the translation's language |
+| `translation` | `spa-rv1909` | The default is the only value that returns results today |
+| `limit` | `10` | Capped at 50 |
+
+Query in the same language as the translation. Because `spa-rv1909` is Spanish, Spanish
+queries work markedly better than English ones — `el amor de Dios` will outperform
+`the love of God` even though both return something.
+
+## Semantic versus the other two
+
+| | `semanticSearch` | `search` | `concordance` |
+|---|---|---|---|
+| Finds | Meaning | Literal substring | Word and its forms |
+| Ordering | Similarity | Canonical | Canonical |
+| Exhaustive | No | No | Yes |
+| Needs setup | Embeddings | Nothing | Concordance index |
+
+Use semantic search when the user's words are unlikely to appear in the text — "verses about
+anxiety", "what does it say about forgiving enemies". Use the others when the wording matters.
+
+## Cost and failure modes
+
+Each call generates an embedding through an external service, which makes it the most
+expensive query in the API and the only one with a network dependency of its own. Two
+consequences:
+
+- **Cache aggressively.** Identical queries produce identical results; there is no reason to
+  ask twice.
+- **Handle the outage case.** If the embedding service is unavailable you get:
+
+  ```json
+  { "errors": [{ "message": "Embedding service is temporarily unavailable. Please try again later." }] }
+  ```
+
+Note that an unsupported translation still spends an embedding call before returning its empty
+array, so guard the translation client-side rather than discovering it server-side.

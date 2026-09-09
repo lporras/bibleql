@@ -1,0 +1,149 @@
+---
+id: concordance
+title: Concordance
+sidebar_position: 7
+description: Exhaustive, canonically ordered word study with per-book distribution and keyword-in-context snippets.
+---
+
+import ApiExample from "@site/src/components/ApiExample";
+
+# Concordance
+
+A concordance answers "where does this word appear, everywhere, in order?" That is a different
+question from search, and `concordance` is built to answer it exactly:
+
+- **Exhaustive** — every occurrence, reachable through pagination. Nothing is dropped.
+- **Canonically ordered** — Genesis → Revelation, then chapter, then verse. Never ranked by
+  relevance.
+- **Aggregated** — totals per book and per testament come back alongside the page.
+- **In context** — each occurrence includes a keyword-in-context snippet.
+
+:::info Requires an index
+Concordance queries need the translation to have been indexed. Check
+`concordanceIndexedAt` on the translation — if it is `null`, the query returns an error telling
+you which rake task to run. See [Translations](/guides/translations#feature-support-varies).
+:::
+
+## A full query
+
+<ApiExample op="concordance" />
+
+## Reading the response
+
+Three parts, each answering something different.
+
+### `entry` — translation-wide aggregates
+
+```graphql
+entry {
+  lemma
+  surfaceForms
+  totalOccurrences
+  verseCount
+  occurrencesByBook { bookId bookName count }
+  occurrencesByTestament { old new }
+}
+```
+
+These cover the **whole translation** and are unaffected by paging. They are also unaffected
+by your `book` and `testament` filters — `entry` always describes the word globally, which is
+what makes it useful as a header above filtered results.
+
+- `lemma` is the normalized stem, and it can look mangled (`misericordi`). It is an index key,
+  not something to show a user.
+- `surfaceForms` is what to display — up to 10 real word forms found in the text, most frequent
+  first. It is a sample, not an exhaustive list.
+- `totalOccurrences` counts tokens; `verseCount` counts verses. The first can exceed the second
+  when a word repeats inside one verse.
+
+### `edges` — this page of occurrences
+
+```graphql
+edges {
+  cursor
+  node {
+    context
+    verse { bookName chapter verse text }
+  }
+}
+```
+
+:::danger `context` contains HTML
+`context` wraps the matched term in `<mark>` tags. It is generated server-side from the verse
+text, but you must still sanitize it before rendering as HTML — never interpolate it into the
+DOM unescaped as a habit.
+:::
+
+### `pageInfo` — where you are
+
+```graphql
+pageInfo { hasNextPage endCursor }
+```
+
+## Pagination
+
+Pass `endCursor` back as `after`:
+
+```graphql
+query {
+  concordance(translation: "spa-rv1909", word: "amor", first: 25, after: "UFNBOjIzOjE=") {
+    edges { cursor node { verse { bookName chapter verse } } }
+    pageInfo { hasNextPage endCursor }
+  }
+}
+```
+
+Cursors are opaque — do not decode or construct them. `first` defaults to 25 and is clamped to
+1–100.
+
+Keep paging while `hasNextPage` is true. Because ordering is canonical and stable, a cursor
+stays valid across requests as long as the translation has not been re-indexed.
+
+## Filtering
+
+| Argument | Effect |
+|---|---|
+| `book` | Canonical id (`PSA`) or localized name (`Salmos`) |
+| `testament` | `OLD` or `NEW` |
+
+The two **combine with AND** — `book: "PSA", testament: OLD` is a valid, non-contradictory
+filter. This differs from `randomVerse`, where `books` overrides `testament`; see
+[API Behavior](/reference/api-behavior).
+
+<ApiExample op="concordanceByBook" />
+
+Note two things in that response. `totalCount` drops from 398 to 164 — the count for Psalms
+alone. And `book` accepted `"Salmos"`, the localized name, rather than the canonical `PSA`;
+either works.
+
+Filters narrow `edges` and `totalCount`, but **not** `entry`, which stays translation-wide.
+That is deliberate: it lets you show "164 of 398 occurrences are in Psalms" from a single
+request.
+
+## Stemming
+
+Matching runs through the translation's PostgreSQL text-search dictionary, so `amor` finds
+`amores` and `amoroso`. Whether that happens depends on the translation:
+
+- `hasStemming: true` — linguistic stemming for that language is available
+- `hasStemming: false` — only exact word forms match
+
+Check it before promising users fuzzy word matching.
+
+## Complexity budget
+
+`concordance` carries a custom complexity cost proportional to `first`, against the schema's
+overall budget of 300. Requesting `first: 100` alongside deeply nested `verse` selections can
+exceed it. If you hit a complexity error, lower `first` or select fewer fields per occurrence.
+
+## The word index
+
+To browse what words exist rather than look one up, use `concordanceIndex`:
+
+<ApiExample op="concordanceIndex" />
+
+It returns an alphabetical frequency list — useful for building a word-study index page or an
+autocomplete. `minOccurrences` filters out rare words; `first` is clamped to 1–200.
+
+Note these entries are `lemma` values, with the same caveat as above: they are stems, not
+display forms.

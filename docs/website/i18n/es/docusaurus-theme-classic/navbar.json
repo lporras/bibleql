@@ -1,0 +1,30 @@
+{
+  "title": {
+    "message": "BibleQL",
+    "description": "The title in the navbar"
+  },
+  "logo.alt": {
+    "message": "BibleQL",
+    "description": "The alt text of navbar logo"
+  },
+  "item.label.Docs": {
+    "message": "Documentación",
+    "description": "Navbar item with label Docs"
+  },
+  "item.label.API Reference": {
+    "message": "Referencia de la API",
+    "description": "Navbar item with label API Reference"
+  },
+  "item.label.SDKs": {
+    "message": "SDKs",
+    "description": "Navbar item with label SDKs"
+  },
+  "item.label.Playground": {
+    "message": "Playground",
+    "description": "Navbar item with label Playground"
+  },
+  "item.label.GitHub": {
+    "message": "GitHub",
+    "description": "Navbar item with label GitHub"
+  }
+}

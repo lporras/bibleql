@@ -1,0 +1,106 @@
+---
+id: authentication
+title: Autenticación
+sidebar_position: 3
+description: Cómo funcionan las API keys de BibleQL, cómo enviarlas y cómo mantenerlas a salvo.
+---
+
+import { API_KEY_REQUEST_URL, GRAPHQL_ENDPOINT } from "@site/src/constants";
+
+# Autenticación
+
+Toda petición al endpoint de GraphQL requiere una API key. No hay un nivel anónimo ni gratuito
+con límite: una petición sin autenticar se rechaza antes incluso de interpretar la query.
+
+## Enviar la key
+
+Pásala como bearer token en el encabezado `Authorization`:
+
+```http
+Authorization: Bearer $BIBLEQL_API_KEY
+```
+
+Una petición completa:
+
+```bash
+curl https://bibleql.org/graphql \
+  -H "Authorization: Bearer $BIBLEQL_API_KEY" \
+  -H "Content-Type: application/json" \
+  --data '{"query":"query { translations { identifier } }"}'
+```
+
+El encabezado debe ser exactamente `Bearer ` seguido del token. No se aceptan otros esquemas,
+ni parámetros en la URL, ni cookies.
+
+## Entornos
+
+Las keys están limitadas a un entorno, y el prefijo indica cuál:
+
+| Prefijo | Entorno |
+|---|---|
+| `bql_live_` | Producción |
+| `bql_test_` | Desarrollo y pruebas |
+
+Una key solo es válida en su propio entorno. Enviar una key `bql_test_` a producción falla con
+`API key not valid for this environment` — un mensaje distinto al de una key desconocida, lo
+cual resulta útil al depurar un despliegue que tomó el secreto equivocado.
+
+Se otorga **una key por dirección de correo y por entorno**.
+
+## Obtener una key
+
+Solicítala en el <a href={API_KEY_REQUEST_URL}>formulario de solicitud</a>. Las solicitudes se
+aprueban manualmente y recibirás el resultado por correo. El formulario tiene límite de
+peticiones, así que enviarlo repetidamente no acelera nada.
+
+## Guardar las keys de forma segura
+
+La key te identifica y consume tu cuota. Trátala como una contraseña.
+
+- **Mantenla en el servidor.** Todo lo que se envía a un navegador o a una app móvil es
+  público, por más ofuscado que esté. Si necesitas texto bíblico en una app cliente, hazlo
+  pasar por tu propio backend.
+- **Usa variables de entorno**, no literales en el código. Ambos SDKs leen la key que les
+  pases desde `ENV` / `process.env`.
+- **Nunca la subas al repositorio.** Añade `.env` a `.gitignore` antes del primer commit, no
+  después.
+- **Usa una key `bql_test_` en desarrollo** para que una filtración desde un portátil o desde
+  los logs de CI no pueda gastar tu cuota de producción.
+
+:::warning bibleql-js es solo para servidor
+El SDK de Node está hecho para Node.js y expondrá tu key si se empaqueta en código de frontend.
+Su propio README lo advierte. Úsalo desde un servidor, una función serverless o un paso de
+build.
+:::
+
+## Cuando una key es rechazada
+
+Ambos fallos devuelven HTTP `401` con un cuerpo con forma de error de GraphQL:
+
+```json
+{ "errors": [{ "message": "Invalid or missing API key" }] }
+```
+
+```json
+{ "errors": [{ "message": "API key not valid for this environment" }] }
+```
+
+El primero cubre un encabezado ausente, un encabezado mal formado y un token desconocido o
+revocado — la API deliberadamente no los distingue, para que no puedas sondear keys válidas.
+
+## Revocación
+
+El operador puede revocar una key, tras lo cual toda petición con ese token devuelve
+`Invalid or missing API key`. Si crees que una key se ha filtrado, pide que se revoque y
+solicita un reemplazo en lugar de esperar.
+
+## Límites de peticiones
+
+Autenticación y cuota son cosas distintas: una key válida sigue teniendo límites, aplicados por
+key y por IP. Consulta [Límites de peticiones](/reference/rate-limits).
+
+:::note
+La introspección está disponible para cualquier cliente autenticado, así que las herramientas
+de GraphQL — Apollo Sandbox, generadores de código, extensiones de IDE — funcionan contra
+<code>{GRAPHQL_ENDPOINT}</code> en cuanto proporcionas una key.
+:::

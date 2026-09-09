@@ -1,0 +1,67 @@
+---
+id: bible-index
+title: Bible Index
+sidebar_position: 9
+description: Discovering the book, chapter and verse-count structure of a translation.
+---
+
+import ApiExample from "@site/src/components/ApiExample";
+
+# Bible Index
+
+`bibleIndex` returns the **structure** of a translation — every book, its localized name, how
+many chapters it has, and how many verses are in each chapter. No verse text.
+
+This is what you build navigation from.
+
+<ApiExample op="bibleIndex" />
+
+## Full structure in one request
+
+```graphql
+query {
+  bibleIndex(translation: "eng-web") {
+    bookId
+    name
+    testament
+    position
+    chapterCount
+    chapters {
+      number
+      verseCount
+    }
+  }
+}
+```
+
+That is enough to render a complete book → chapter → verse picker without touching the text at
+all. Fetch it once, cache it, and drive your whole navigation from it.
+
+:::warning Do not select `verses` here
+`Chapter` also exposes a `verses` field. Asking for it across the whole index means requesting
+every verse of the entire Bible in one query, which will exceed the complexity budget — and if
+it did not, it would be an enormous response.
+
+Use `bibleIndex` for structure, then [`chapter`](/getting-started/first-query) to fetch the
+text of the one chapter your user opened.
+:::
+
+## Verse counts differ between translations
+
+Do not hard-code them. Chapter and verse counts vary — some translations merge or split verses,
+and versification genuinely differs between editions. Always read counts from the index for the
+translation you are displaying.
+
+This is also why you should not assume a reference valid in one translation resolves in
+another.
+
+## Structure versus canonical books
+
+| Query | Returns | Scope |
+|---|---|---|
+| `books` | 66 canonical books, English names | Translation-independent |
+| `bibleIndex(translation:)` | Books present in that translation, localized names, with chapter structure | One translation |
+
+Use `books` for a canonical list; use `bibleIndex` when the answer depends on the translation.
+
+<ApiExample op="books" />

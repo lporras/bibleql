@@ -39,6 +39,10 @@
 # Ignore CI service files.
 /.github
 
+# Ignore the documentation site — it's a static site deployed to GitHub Pages by
+# .github/workflows/docs.yml and has no place in the Rails runtime image.
+/docs
+
 # Ignore Kamal files.
 /config/deploy*.yml
 /.kamal

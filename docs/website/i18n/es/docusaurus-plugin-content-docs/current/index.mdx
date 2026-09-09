@@ -1,0 +1,61 @@
+---
+slug: /
+title: BibleQL
+description: Una API GraphQL para consultar versículos y pasajes bíblicos en decenas de traducciones, con nombres de libros localizados.
+hide_table_of_contents: true
+---
+
+import { PLAYGROUND_URL } from "@site/src/constants";
+
+# BibleQL
+
+Una API GraphQL para leer la Biblia. Un solo endpoint, decenas de traducciones y referencias
+que funcionan en el idioma de la traducción — `Juan 3:16` o `John 3:16`, según convenga.
+
+```graphql
+query {
+  passage(translation: "spa-rv1909", reference: "Juan 3:16") {
+    reference
+    text
+    translationName
+  }
+}
+```
+
+## Empieza aquí
+
+| | |
+|---|---|
+| **[Inicio rápido](/getting-started/quickstart)** | Tu primera petición en unos dos minutos |
+| **[Autenticación](/getting-started/authentication)** | API keys, encabezados y cómo protegerlas |
+| **[Referencia de la API](/api-reference)** | Cada query, tipo y enum, generados desde el esquema |
+| **[SDKs](/sdks)** | Clientes oficiales para Ruby y Node.js |
+
+## Qué puede hacer
+
+- **Búsqueda de pasajes** — versículos individuales, rangos, multirrangos, capítulos completos
+  ([guía](/guides/references))
+- **Nombres de libros localizados** — consulta traducciones en español con nombres en español
+  ([guía](/guides/localized-book-names))
+- **Búsqueda de texto** — coincidencia rápida de subcadenas en una traducción
+  ([guía](/guides/search))
+- **Búsqueda semántica** — encuentra versículos por significado usando embeddings
+  ([guía](/guides/semantic-search))
+- **Concordancia** — estudio de palabras exhaustivo y en orden canónico, con fragmentos de
+  contexto ([guía](/guides/concordance))
+- **Versículo del día** — un versículo diario curado, en cualquier traducción
+  ([guía](/guides/verse-of-the-day))
+- **Descubrimiento de estructura** — libros, capítulos y número de versículos por traducción
+  ([guía](/guides/bible-index))
+
+## Pruébala sin escribir código
+
+El <a href={PLAYGROUND_URL}>playground interactivo</a> funciona contra la API en vivo e incluye
+un panel de encabezados para tu key. Es la forma más rápida de explorar una query antes de
+integrarla.
+
+:::note Sobre traducciones y licencias
+BibleQL sirve traducciones de dominio público y con licencias libres. Cada una indica su
+licencia en el campo `note` — revísala siempre antes de redistribuir el texto. Consulta
+[Traducciones de la Biblia](/guides/translations).
+:::

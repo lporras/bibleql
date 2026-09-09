@@ -1,0 +1,70 @@
+{
+  "version.label": {
+    "message": "Actual",
+    "description": "The label for version current"
+  },
+  "sidebar.docsSidebar.category.Getting Started": {
+    "message": "Primeros pasos",
+    "description": "The label for category 'Getting Started' in sidebar 'docsSidebar'"
+  },
+  "sidebar.docsSidebar.category.Guides": {
+    "message": "Guías",
+    "description": "The label for category 'Guides' in sidebar 'docsSidebar'"
+  },
+  "sidebar.docsSidebar.category.Reference": {
+    "message": "Referencia",
+    "description": "The label for category 'Reference' in sidebar 'docsSidebar'"
+  },
+  "sidebar.apiSidebar.category.Directives": {
+    "message": "Directivas",
+    "description": "The label for category 'Directives' in sidebar 'apiSidebar'"
+  },
+  "sidebar.apiSidebar.category.Directives.link.generated-index.title": {
+    "message": "Resumen de directivas",
+    "description": "The generated-index page title for category 'Directives' in sidebar 'apiSidebar'"
+  },
+  "sidebar.apiSidebar.category.Enums": {
+    "message": "Enums",
+    "description": "The label for category 'Enums' in sidebar 'apiSidebar'"
+  },
+  "sidebar.apiSidebar.category.Enums.link.generated-index.title": {
+    "message": "Resumen de enums",
+    "description": "The generated-index page title for category 'Enums' in sidebar 'apiSidebar'"
+  },
+  "sidebar.apiSidebar.category.Mutations": {
+    "message": "Mutations",
+    "description": "The label for category 'Mutations' in sidebar 'apiSidebar'"
+  },
+  "sidebar.apiSidebar.category.Mutations.link.generated-index.title": {
+    "message": "Resumen de mutations",
+    "description": "The generated-index page title for category 'Mutations' in sidebar 'apiSidebar'"
+  },
+  "sidebar.apiSidebar.category.Objects": {
+    "message": "Objetos",
+    "description": "The label for category 'Objects' in sidebar 'apiSidebar'"
+  },
+  "sidebar.apiSidebar.category.Objects.link.generated-index.title": {
+    "message": "Resumen de objetos",
+    "description": "The generated-index page title for category 'Objects' in sidebar 'apiSidebar'"
+  },
+  "sidebar.apiSidebar.category.Queries": {
+    "message": "Queries",
+    "description": "The label for category 'Queries' in sidebar 'apiSidebar'"
+  },
+  "sidebar.apiSidebar.category.Queries.link.generated-index.title": {
+    "message": "Resumen de queries",
+    "description": "The generated-index page title for category 'Queries' in sidebar 'apiSidebar'"
+  },
+  "sidebar.apiSidebar.category.Scalars": {
+    "message": "Escalares",
+    "description": "The label for category 'Scalars' in sidebar 'apiSidebar'"
+  },
+  "sidebar.apiSidebar.category.Scalars.link.generated-index.title": {
+    "message": "Resumen de escalares",
+    "description": "The generated-index page title for category 'Scalars' in sidebar 'apiSidebar'"
+  },
+  "sidebar.sdkSidebar.category.SDKs": {
+    "message": "SDKs",
+    "description": "The label for category 'SDKs' in sidebar 'sdkSidebar'"
+  }
+}

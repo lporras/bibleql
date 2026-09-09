@@ -1,0 +1,91 @@
+---
+id: index
+title: SDKs
+sidebar_position: 1
+description: Clientes oficiales de BibleQL para Ruby y Node.js, y qué cubre cada uno.
+---
+
+import { SDK, SDK_EXAMPLES_REPO } from "@site/src/constants";
+
+# SDKs
+
+Dos clientes oficiales envuelven la API para que puedas llamar métodos en lugar de escribir
+GraphQL. Ambos tienen licencia MIT y están publicados.
+
+| Lenguaje | Paquete | Código |
+|---|---|---|
+| Ruby | <a href={SDK.ruby.registry}><code>bibleql-ruby</code> en RubyGems</a> | <a href={SDK.ruby.repo}>lporras/bibleql-ruby</a> |
+| Node.js / TypeScript | <a href={SDK.node.registry}><code>bibleql-js</code> en npm</a> | <a href={SDK.node.repo}>lporras/bibleql-js</a> |
+
+```ruby title="Gemfile"
+gem "bibleql-ruby"
+```
+
+```bash title="npm"
+npm install bibleql-js
+```
+
+Después consulta [Configurar los SDKs](/sdks/configuration) para saber dónde inicializar el
+cliente.
+
+También existe un <a href={SDK_EXAMPLES_REPO}>repositorio de ejemplos</a> que muestra ambos en
+uso.
+
+## Cobertura
+
+Ninguno de los dos cubre todavía el esquema completo. Donde falte un método, usa la forma
+GraphQL o cURL: todos los ejemplos de este sitio muestran ambas.
+
+| Query | Ruby | Node.js |
+|---|---|---|
+| `translations` | ✅ | ✅ |
+| `translation` | ✅ | ✅ |
+| `books` | ✅ | ✅ |
+| `languages` | ✅ | ✅ |
+| `passage` | ✅ | ✅ |
+| `chapter` | ✅ | ✅ |
+| `verse` | ✅ | ✅ |
+| `randomVerse` | ✅ | ✅ |
+| `search` | ✅ | ✅ |
+| `verseOfTheDay` | ✅ | ✅ |
+| `bibleIndex` | ✅ | ✅ |
+| `semanticSearch` | ❌ | ✅ |
+| `concordance` | ❌ | ❌ |
+| `concordanceIndex` | ❌ | ❌ |
+
+La familia de concordancia todavía no está en ninguno de los dos clientes.
+[Concordancia](/guides/concordance) muestra el GraphQL directamente.
+
+## Ambos son solo para servidor
+
+:::danger Nunca envíes una API key a un navegador
+`bibleql-js` está hecho para Node.js y su README dice explícitamente que no se use en código de
+frontend. Empaquetarlo en una app de navegador expone tu key a cualquiera que abra las
+herramientas de desarrollo.
+
+Si necesitas texto bíblico en una aplicación cliente, llama a BibleQL desde tu propio backend y
+reenvía el resultado.
+:::
+
+## Errores tipados
+
+Ambos mapean los fallos de la API a clases de excepción, así que puedes ramificar por tipo en
+lugar de analizar mensajes:
+
+| Condición | Ruby | Node.js |
+|---|---|---|
+| Key inválida | `BibleQL::AuthenticationError` | `AuthenticationError` |
+| Límite superado | `BibleQL::RateLimitError` | `RateLimitError` |
+| No encontrado | `BibleQL::NotFoundError` | `NotFoundError` |
+| Error del servidor | `BibleQL::ServerError` | `ServerError` |
+| Tiempo de espera | `BibleQL::TimeoutError` | `TimeoutError` |
+| Fallo de red | `BibleQL::ConnectionError` | `ConnectionError` |
+| Error de GraphQL | `BibleQL::QueryError` | `QueryError` |
+
+Consulta [Errores](/reference/errors) para el formato subyacente.
+
+:::warning Revisa el endpoint por defecto
+Ambos SDKs apuntan por defecto a una URL alojada en Render en lugar de a
+`https://bibleql.org/graphql`. Si quieres fijar el endpoint canónico, configúralo
+explícitamente: `api_url` en Ruby, `apiUrl` en Node. La página de cada SDK muestra cómo.
+:::

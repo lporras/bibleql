@@ -1,0 +1,119 @@
+---
+id: api-behavior
+title: Comportamiento de la API
+sidebar_position: 3
+description: Rarezas, inconsistencias y límites que conviene conocer antes de construir sobre BibleQL.
+---
+
+# Comportamiento de la API
+
+Documentado con honestidad: las cosas que te van a sorprender, incluidas algunas
+inconsistencias reales del esquema actual. Nada de esto es un secreto, y es poco probable que
+cambie sin avisar.
+
+## La API es de solo lectura
+
+No hay mutations admitidas. El esquema sí expone una raíz `Mutation` con un único campo:
+
+```graphql
+type Mutation {
+  testField: String!
+}
+```
+
+`testField` es andamiaje sobrante del generador original de Rails. Siempre devuelve
+`"Hello World"`, no forma parte de la API admitida y acabará eliminándose. No construyas nada
+sobre él.
+
+## `testament` no es consistente entre queries
+
+El mismo concepto tiene dos representaciones, y tienes que usar la que espera cada query:
+
+| Query | Tipo del argumento | Valores aceptados |
+|---|---|---|
+| `concordance` | enum `Testament` | `OLD`, `NEW` |
+| `randomVerse` | `String` | `"OT"`, `"NT"` |
+
+Los campos de los objetos usan una tercera forma: `Book.testament` y `LocalizedBook.testament`
+son cadenas simples con `"OT"` o `"NT"`.
+
+Pasar `"OT"` a `concordance` es un error de validación, y pasar `OLD` a `randomVerse` también.
+Es una verruga, no un diseño; persiste porque cambiarlo rompería clientes existentes.
+
+## Los filtros se combinan de forma distinta según la query
+
+También inconsistente, y también conviene saberlo:
+
+- **`concordance`** — `book` y `testament` se combinan con **AND**. Ambos se aplican.
+- **`randomVerse`** — `books` **anula** `testament`. Si pasas los dos, `testament` se ignora en
+  silencio, sin error.
+
+Así que `randomVerse(books: "PSA", testament: "NT")` devuelve un versículo de Salmos, un libro
+del Antiguo Testamento, a pesar de lo que pediste.
+
+## Los argumentos se recortan en silencio
+
+Varios límites se imponen recortando en lugar de dando error, así que puedes recibir menos de
+lo que pediste sin ninguna señal:
+
+| Argumento | Por defecto | Recortado a |
+|---|---|---|
+| `search(limit:)` | 25 | máx. 100 |
+| `semanticSearch(limit:)` | 10 | máx. 50 |
+| `concordance(first:)` | 25 | 1–100 |
+| `concordanceIndex(first:)` | 50 | 1–200 |
+
+Pedir `limit: 500` en `search` devuelve 100 filas y ninguna advertencia. No tomes el número de
+resultados como confirmación de que recibiste todo.
+
+## Resultados vacíos silenciosos
+
+Dos casos devuelven una lista vacía en lugar de un error, lo que hace fácil diagnosticarlos mal:
+
+- **`semanticSearch` en una traducción sin embeddings.** Hoy solo `spa-rv1909` los tiene.
+  Cualquier otra traducción devuelve `[]` — y aun así gasta una llamada de embedding al
+  hacerlo. Consulta [Búsqueda semántica](/guides/semantic-search).
+- **Una referencia interpretable pero fuera de rango.** `Juan 3:999` se resuelve a una lista
+  `verses` vacía.
+
+## Límites de las queries
+
+| Límite | Valor | Al superarlo |
+|---|---|---|
+| Profundidad máxima | 15 | Error de validación |
+| Complejidad máxima | 300 | Error de validación |
+| Tokens máximos por query | 5.000 | Error de validación |
+| Errores de validación reportados | 100 | Se truncan |
+
+`concordance` tiene un coste de complejidad proporcional a su argumento `first`, así que una
+página grande con mucho anidamiento puede agotar el presupuesto por sí sola.
+
+## Los valores por defecto varían según la query
+
+La mayoría de las queries usan `eng-web` como `translation` por defecto. `semanticSearch` usa
+`spa-rv1909`, porque es la única traducción que puede servir de verdad. `concordance` y
+`concordanceIndex` requieren `translation` explícitamente: no tienen valor por defecto.
+
+Ser explícito en todas partes es el hábito más seguro.
+
+## La búsqueda por nodo de Relay no está implementada
+
+`Translation` y `Book` exponen un campo `id: ID!` descrito como identificador global de objeto
+de Relay, pero no hay un punto de entrada `node(id:)` funcional con el que resolverlo. Trata
+esos valores `id` como identificadores opacos, no como referencias recuperables.
+
+## La introspección está habilitada
+
+La introspección completa del esquema está disponible para cualquier cliente autenticado, así
+que las herramientas de GraphQL — generadores de código, Apollo Sandbox, extensiones de IDE —
+funcionan contra el endpoint en vivo en cuanto proporcionas una key.
+
+## Versionado
+
+No hay versión de la API en la URL ni en un encabezado. El esquema evoluciona de forma aditiva:
+se añaden campos y queries nuevas, y las existentes no se eliminan ni cambian de tipo sin
+aviso. La [Referencia de la API](/api-reference) generada siempre refleja lo que está
+desplegado.
+
+Las dos excepciones ya señaladas — `Mutation.testField` y la inconsistencia de `testament` —
+son los casos conocidos donde una limpieza incompatible en el futuro es plausible.

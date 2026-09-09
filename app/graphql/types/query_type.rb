@@ -2,6 +2,8 @@
 
 module Types
   class QueryType < Types::BaseObject
+    description "The BibleQL read API. Every field is a query entry point; all requests require an API key."
+
     field :node, Types::NodeType, null: true, description: "Fetches an object given its ID." do
       argument :id, ID, required: true, description: "ID of the object."
     end
@@ -62,9 +64,10 @@ module Types
 
     field :chapter, [ Types::VerseType ], null: false,
       description: "Get all verses in a chapter" do
-      argument :translation, String, required: false, default_value: "eng-web"
+      argument :translation, String, required: false, default_value: "eng-web",
+        description: "Translation identifier (e.g. 'eng-web', 'spa-rv1909')"
       argument :book, String, required: true, description: "Book ID (e.g. 'MAT') or localized name (e.g. 'Mateo')"
-      argument :chapter, Integer, required: true
+      argument :chapter, Integer, required: true, description: "Chapter number, starting at 1"
     end
     def chapter(translation:, book:, chapter:)
       t = Translation.find_by!(identifier: translation)
@@ -76,10 +79,11 @@ module Types
 
     field :verse, Types::VerseType, null: false,
       description: "Get a single verse" do
-      argument :translation, String, required: false, default_value: "eng-web"
+      argument :translation, String, required: false, default_value: "eng-web",
+        description: "Translation identifier (e.g. 'eng-web', 'spa-rv1909')"
       argument :book, String, required: true, description: "Book ID or localized name"
-      argument :chapter, Integer, required: true
-      argument :verse, Integer, required: true
+      argument :chapter, Integer, required: true, description: "Chapter number, starting at 1"
+      argument :verse, Integer, required: true, description: "Verse number within the chapter, starting at 1"
     end
     def verse(translation:, book:, chapter:, verse:)
       t = Translation.find_by!(identifier: translation)
@@ -119,9 +123,12 @@ module Types
 
     field :search, [ Types::VerseType ], null: false,
       description: "Search verses by text content" do
-      argument :translation, String, required: false, default_value: "eng-web"
-      argument :query, String, required: true
-      argument :limit, Integer, required: false, default_value: 25
+      argument :translation, String, required: false, default_value: "eng-web",
+        description: "Translation identifier (e.g. 'eng-web', 'spa-rv1909')"
+      argument :query, String, required: true,
+        description: "Text to match. Case-insensitive substring match — no stemming, so 'love' will not match 'loved'. Use concordance for stemmed, exhaustive lookup."
+      argument :limit, Integer, required: false, default_value: 25,
+        description: "Max results to return. Capped at 100."
     end
     def search(translation:, query:, limit:)
       t = Translation.find_by!(identifier: translation)
@@ -191,8 +198,10 @@ module Types
         description: "Word to look up (matched via the translation's stemming dictionary when available; see hasStemming)"
       argument :book, String, required: false,
         description: "Canonical book id (e.g. 'PSA') or localized book name (e.g. 'Salmos')"
-      argument :testament, Types::TestamentType, required: false
-      argument :first, Integer, required: false, default_value: ConcordanceLookup::DEFAULT_PAGE_SIZE
+      argument :testament, Types::TestamentType, required: false,
+        description: "Restrict to one testament. Combines with `book` as an AND filter."
+      argument :first, Integer, required: false, default_value: ConcordanceLookup::DEFAULT_PAGE_SIZE,
+        description: "Max occurrences per page. Clamped to 1..100."
       argument :after, String, required: false, description: "Opaque cursor from a previous page's pageInfo.endCursor"
     end
     def concordance(translation:, word:, first:, book: nil, testament: nil, after: nil)
@@ -213,10 +222,13 @@ module Types
 
     field :concordance_index, [ Types::ConcordanceIndexEntryType ], null: false,
       description: "Alphabetical word frequency index for a translation." do
-      argument :translation, String, required: true
+      argument :translation, String, required: true,
+        description: "Translation identifier. Must already be indexed — see rake concordance:index."
       argument :prefix, String, required: false, description: "Only words starting with this prefix (case-insensitive)"
-      argument :min_occurrences, Integer, required: false, default_value: 1
-      argument :first, Integer, required: false, default_value: ConcordanceWordIndexLookup::DEFAULT_PAGE_SIZE
+      argument :min_occurrences, Integer, required: false, default_value: 1,
+        description: "Skip words occurring fewer times than this across the translation"
+      argument :first, Integer, required: false, default_value: ConcordanceWordIndexLookup::DEFAULT_PAGE_SIZE,
+        description: "Max entries to return. Clamped to 1..200."
     end
     def concordance_index(translation:, first:, prefix: nil, min_occurrences: 1)
       t = Translation.find_by!(identifier: translation)

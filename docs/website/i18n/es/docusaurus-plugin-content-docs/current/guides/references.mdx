@@ -1,0 +1,109 @@
+---
+id: references
+title: Referencias bíblicas
+sidebar_position: 3
+description: Todos los formatos de referencia que acepta la query passage, y cómo se normaliza cada uno.
+---
+
+import ApiExample from "@site/src/components/ApiExample";
+
+# Referencias bíblicas
+
+La query `passage` toma una cadena `reference` y la resuelve a versículos. Detrás hay dos
+analizadores: uno para nombres de libros en inglés y otro para nombres localizados en el idioma
+de la traducción. Admiten cosas ligeramente distintas, y conviene saberlo antes de depender de
+un formato.
+
+## Formatos admitidos
+
+Todos los ejemplos siguientes están verificados contra el analizador.
+
+| Formato | Ejemplo | Resuelve a |
+|---|---|---|
+| Versículo individual | `Juan 3:16` | un versículo |
+| Rango de versículos | `Juan 3:16-18` | versículos 16, 17, 18 |
+| Varios rangos | `Mateo 25:31-33,46` | versículos 31–33 y 46 |
+| Capítulo completo | `Génesis 1` | todos los versículos del capítulo |
+| Entre capítulos | `Romans 12:1,3-4 & 13:2-4` | 12:1, 12:3–4, 13:2–4 |
+| Nombre localizado | `Mateo 28:18-20` | versículos 18–20 |
+
+<ApiExample op="passage" />
+
+## Las referencias se normalizan al salir
+
+El campo `reference` de la respuesta es la forma *interpretada*, que no siempre es lo que
+enviaste:
+
+| Envías | Recibes |
+|---|---|
+| `Romans 12:1,3-4 & 13:2-4` | `Romans 12:1,3-4,13:2-4` |
+| `Psalm 23` | `Psalms 23` |
+| `Juan 3:16` | `Juan 3:16` |
+
+El separador `&` se convierte en coma, y los nombres de libros en inglés se canonizan: `Psalm`
+pasa a `Psalms`. Si necesitas devolver al usuario su texto original, guarda tu propia copia; no
+confíes en que `reference` regrese idéntico.
+
+### Se aceptan abreviaturas
+
+Los nombres de libros en inglés se pueden abreviar, y la respuesta llega con el nombre completo:
+
+| Envías | Recibes |
+|---|---|
+| `Jhn 3:16` | `John 3:16` |
+| `Jn 3:16` | `John 3:16` |
+| `Gen 1:1` | `Genesis 1:1` |
+| `1 Jn 1:1` | `1 John 1:1` |
+
+Esto hace que la entrada escrita por usuarios sea mucho más tolerante de lo que parece: en
+general no necesitas normalizar abreviaturas antes de enviarlas.
+
+## Referencias localizadas
+
+Cuando el nombre del libro coincide con un nombre del idioma de la traducción, se encarga el
+analizador localizado:
+
+```graphql
+query {
+  passage(translation: "spa-rv1909", reference: "Mateo 28:18-20") {
+    reference
+    text
+  }
+}
+```
+
+Los nombres localizados se comparan sin distinguir mayúsculas, así que `mateo` funciona igual
+que `Mateo`.
+
+:::warning Las referencias localizadas no pueden abarcar varios capítulos
+El analizador localizado admite versículos individuales, rangos y multirrangos separados por
+comas, pero todo dentro de **un** capítulo. `Romanos 12:1 & 13:2` no se resolverá. Las
+referencias entre capítulos solo funcionan con nombres de libros en inglés.
+
+Para un pasaje entre capítulos en una traducción que no sea inglesa, haz una query por capítulo
+o usa el nombre del libro en inglés con la traducción no inglesa: el texto que recibes sigue
+siendo de esa traducción.
+:::
+
+Consulta [Nombres de libros localizados](/guides/localized-book-names) para descubrir los
+nombres que acepta una traducción.
+
+## Capítulos completos
+
+`Génesis 1` devuelve el capítulo entero. Para un capítulo largo eso es mucho texto en una sola
+respuesta, así que usa [`chapter`](/guides/bible-index) cuando quieras los versículos como
+lista, y `passage` cuando los quieras unidos como prosa.
+
+## Cuando una referencia no se resuelve
+
+Una referencia que no se puede interpretar devuelve un error de GraphQL, no un resultado vacío:
+
+```json
+{ "errors": [{ "message": "Invalid reference: 'Nonexistent 1:1'" }] }
+```
+
+Una referencia que sí se interpreta pero apunta fuera del texto — `Juan 3:999` — **no** es un
+error. Se resuelve a una lista `verses` vacía y un `text` vacío, así que comprueba si está
+vacía en lugar de esperar una excepción.
+
+Consulta [Errores](/reference/errors) para el conjunto completo de fallos.

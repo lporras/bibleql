@@ -1,0 +1,68 @@
+---
+id: search
+title: Searching the Bible
+sidebar_position: 5
+description: How the search query matches text, and when to reach for concordance or semantic search instead.
+---
+
+import ApiExample from "@site/src/components/ApiExample";
+
+# Searching the Bible
+
+BibleQL has three different ways to find verses, and picking the wrong one is the most common
+source of surprise. This page covers `search`; the other two have their own guides.
+
+## Choosing among the three
+
+| Query | Matching | Ordering | Use it for |
+|---|---|---|---|
+| `search` | Case-insensitive substring | Canonical | Quick lookup of a literal phrase |
+| `concordance` | Stemmed word | Canonical, exhaustive | Word study, every occurrence |
+| `semanticSearch` | Meaning, via embeddings | By similarity | "Verses about forgiveness" |
+
+## How search matches
+
+<ApiExample op="search" />
+
+`search` performs a **case-insensitive substring match** on the verse text. That has concrete
+consequences:
+
+- `love` matches `love`, `Love`, `beloved` and `lovingkindness` — any verse whose text
+  contains those letters.
+- `love` does **not** match `loved` as a separate concept; it matches it only because `loved`
+  contains the substring `love`. Conversely, searching `loved` will not find `love`.
+- There is **no stemming**. Searching `run` will not find `ran`.
+- There is no phrase or boolean syntax. The whole query string is one substring.
+
+If you want linguistic matching — `amor` finding `amores` and `amoroso` — use
+[`concordance`](/guides/concordance), which runs through the translation's stemming
+dictionary.
+
+## Results and limits
+
+Results come back in canonical order (Genesis → Revelation, then chapter, then verse), not by
+relevance. There is no ranking.
+
+The `limit` argument defaults to `25` and is **capped at 100**, server-side. Asking for 500
+returns 100 without an error, so do not assume you received everything you requested.
+
+`search` has no pagination. If you need every occurrence of a word rather than the first
+hundred, that is exactly what [`concordance`](/guides/concordance) is for — it is exhaustive
+and cursor-paginated.
+
+## Language behaviour
+
+Substring matching is language-agnostic, so `search` works identically on every translation
+with no index required. That is its main advantage: no setup, no per-translation caveats.
+
+It is also why it cannot do anything clever. Case is ignored, so `amor` does find `Amor` — but
+accents are not folded, so `oracion` will **not** find `oración`. If your users type without
+accents, normalize their input against the translation's own spelling before searching, or use
+[`concordance`](/guides/concordance), which goes through a real text-search dictionary.
+
+## Practical guidance
+
+- Looking for a phrase you can quote exactly → `search`
+- Studying a word and its forms → [`concordance`](/guides/concordance)
+- Describing an idea rather than wording → [`semanticSearch`](/guides/semantic-search)
+- Need every match, not a sample → [`concordance`](/guides/concordance)

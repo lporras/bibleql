@@ -1,0 +1,96 @@
+---
+id: localized-book-names
+title: Nombres de libros localizados
+sidebar_position: 4
+description: Consultar traducciones usando nombres de libros en su propio idioma.
+---
+
+import ApiExample from "@site/src/components/ApiExample";
+
+# Nombres de libros localizados
+
+Cada libro tiene un id canónico de tres letras que nunca cambia — `GEN`, `JHN`, `MAT`. Además,
+cada traducción trae sus propios nombres de libros, así que una Biblia en español se puede
+consultar con nombres en español.
+
+## Dos formas de nombrar un libro
+
+Ambas devuelven el mismo versículo de la misma traducción:
+
+```graphql
+query {
+  porId: verse(translation: "spa-rv1909", book: "MAT", chapter: 28, verse: 18) {
+    bookName
+    text
+  }
+  porNombreLocalizado: verse(translation: "spa-rv1909", book: "Mateo", chapter: 28, verse: 18) {
+    bookName
+    text
+  }
+}
+```
+
+Fíjate en que `bookName` llega como `Mateo` en ambos casos: la respuesta siempre está
+localizada según la traducción, independientemente de cómo hayas nombrado el libro.
+
+## Cuál usar
+
+| Usa | Cuándo |
+|---|---|
+| Id canónico (`MAT`) | Código de aplicación. Funciona en toda traducción, nunca es ambiguo. |
+| Nombre localizado (`Mateo`) | Entrada escrita por el usuario, o al mostrar lo que reconocería un lector. |
+
+Si estás diseñando un esquema de URLs o guardando marcadores, guarda el id canónico. Sobrevive
+a un cambio de traducción; un nombre localizado no.
+
+## Descubrir los nombres que usa una traducción
+
+`bibleIndex` devuelve cada libro con su nombre localizado:
+
+<ApiExample op="bibleIndex" />
+
+O a través de una traducción:
+
+```graphql
+query {
+  translation(identifier: "spa-rv1909") {
+    books {
+      bookId
+      name
+    }
+  }
+}
+```
+
+Así se construye un autocompletado que acepta lo que un lector hispanohablante escribiría de
+verdad.
+
+## En las referencias
+
+Los nombres localizados también funcionan dentro de las referencias de `passage`:
+
+```graphql
+query {
+  passage(translation: "spa-rv1909", reference: "Mateo 28:18-20") {
+    reference
+    text
+  }
+}
+```
+
+La comparación no distingue mayúsculas, así que `mateo 28:18` se resuelve igual que
+`Mateo 28:18`.
+
+:::warning Una limitación
+Las referencias localizadas no pueden abarcar varios capítulos. Los versículos individuales,
+los rangos y los multirrangos separados por comas funcionan, pero solo dentro de un capítulo —
+consulta [Referencias bíblicas](/guides/references#referencias-localizadas) para los detalles y
+la alternativa.
+:::
+
+## Comportamiento de reserva
+
+Si una traducción no tiene nombre localizado para un libro, `bookName` recurre al nombre
+canónico en inglés. Nunca recibirás un nombre de libro vacío, pero puede que ocasionalmente
+recibas uno en inglés dentro de una traducción no inglesa, cuando los datos de origen están
+incompletos.

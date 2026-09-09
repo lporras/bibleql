@@ -2,11 +2,15 @@
 
 module Types
   class VerseType < Types::BaseObject
-    field :book_id, String, null: false
-    field :book_name, String, null: false
-    field :chapter, Integer, null: false
-    field :verse, Integer, null: false
-    field :text, String, null: false
+    description "A single verse in one translation"
+
+    field :book_id, String, null: false,
+      description: "Canonical three-letter book id (e.g. 'JHN', 'GEN'). Stable across every translation."
+    field :book_name, String, null: false,
+      description: "Book name localized to this translation (e.g. 'Juan' for Spanish). Falls back to the canonical English name when the translation has no localized name."
+    field :chapter, Integer, null: false, description: "Chapter number, starting at 1"
+    field :verse, Integer, null: false, description: "Verse number within the chapter, starting at 1"
+    field :text, String, null: false, description: "The verse text as it appears in this translation"
 
     def book_id
       object.book.book_id

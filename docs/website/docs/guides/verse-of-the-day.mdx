@@ -1,0 +1,70 @@
+---
+id: verse-of-the-day
+title: Verse of the Day
+sidebar_position: 8
+description: A curated daily verse, in any translation and for any date.
+---
+
+import ApiExample from "@site/src/components/ApiExample";
+
+# Verse of the Day
+
+`verseOfTheDay` returns a curated verse for a given date. The selection comes from a
+hand-maintained list, so it is a deliberate choice rather than a random pick — the same date
+returns the same reference every time.
+
+<ApiExample op="verseOfTheDay" />
+
+## Arguments
+
+| Argument | Default | Notes |
+|---|---|---|
+| `translation` | `eng-web` | Any translation identifier |
+| `date` | today | An ISO 8601 date, `YYYY-MM-DD` |
+
+## A specific date
+
+```graphql
+query {
+  verseOfTheDay(translation: "spa-rv1909", date: "2026-01-01") {
+    reference
+    text
+    translationName
+  }
+}
+```
+
+Because the curation is by date and the text is by translation, the two are independent: the
+same day's verse can be rendered in any translation you like.
+
+## It returns a Passage
+
+The return type is `Passage`, not `Verse` — the verse of the day is sometimes a short range
+rather than a single verse. So `verses` may contain more than one entry, and `text` is the
+joined form:
+
+```graphql
+query {
+  verseOfTheDay {
+    reference
+    text
+    verses {
+      bookName
+      chapter
+      verse
+      text
+    }
+  }
+}
+```
+
+Do not assume `verses` has exactly one element.
+
+## Caching
+
+The result for a given date and translation is stable, which makes it ideal to cache for the
+rest of the day. A daily widget should fetch once, not once per page view.
+
+If you display it in a user's local timezone, be aware the default `date` is resolved
+server-side. For anything timezone-sensitive, pass `date` explicitly rather than relying on the
+default.

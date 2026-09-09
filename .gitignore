@@ -48,3 +48,13 @@
 # file source can't be one) and never committed to this repo.
 /db/holy-bible-xml/*
 !/db/holy-bible-xml/.gitkeep
+
+# Documentation site (docs/website). Note docs/generated/schema.graphql IS
+# committed — CI verifies it against app/graphql — but everything derived from it
+# is rebuilt on every build by `npm run build`.
+/docs/website/node_modules/
+/docs/website/build/
+/docs/website/.docusaurus/
+/docs/website/.env.local
+# Generated from docs/generated/schema.graphql by `docusaurus graphql-to-doc`.
+/docs/website/docs/api-reference/

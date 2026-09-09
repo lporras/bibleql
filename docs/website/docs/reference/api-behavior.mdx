@@ -1,0 +1,118 @@
+---
+id: api-behavior
+title: API Behavior
+sidebar_position: 3
+description: Quirks, inconsistencies and limits worth knowing before you build against BibleQL.
+---
+
+# API Behavior
+
+Documented honestly: the things that will surprise you, including a few genuine
+inconsistencies in the current schema. Nothing here is a secret, and none of it is likely to
+change without notice.
+
+## The API is read-only
+
+There are no supported mutations. The schema does expose a `Mutation` root with a single
+field:
+
+```graphql
+type Mutation {
+  testField: String!
+}
+```
+
+`testField` is scaffolding left over from the original Rails generator. It always returns
+`"Hello World"`, it is not part of the supported API, and it will eventually be removed. Do not
+build anything on it.
+
+## `testament` is not consistent across queries
+
+The same concept has two representations, and you have to match whichever the query expects:
+
+| Query | Argument type | Accepted values |
+|---|---|---|
+| `concordance` | `Testament` enum | `OLD`, `NEW` |
+| `randomVerse` | `String` | `"OT"`, `"NT"` |
+
+Object fields use a third form: `Book.testament` and `LocalizedBook.testament` are plain
+strings containing `"OT"` or `"NT"`.
+
+Passing `"OT"` to `concordance` is a validation error, and passing `OLD` to `randomVerse` is
+too. This is a wart, not a design; it persists because changing it would break existing
+clients.
+
+## Filters compose differently in different queries
+
+Also inconsistent, also worth knowing:
+
+- **`concordance`** — `book` and `testament` combine with **AND**. Both apply.
+- **`randomVerse`** — `books` **overrides** `testament`. If you pass both, `testament` is
+  silently ignored, with no error.
+
+So `randomVerse(books: "PSA", testament: "NT")` returns a verse from Psalms, an Old Testament
+book, despite what you asked for.
+
+## Arguments are silently clamped
+
+Several limits are enforced by clamping rather than erroring, so you can receive less than you
+asked for without any indication:
+
+| Argument | Default | Clamped to |
+|---|---|---|
+| `search(limit:)` | 25 | max 100 |
+| `semanticSearch(limit:)` | 10 | max 50 |
+| `concordance(first:)` | 25 | 1–100 |
+| `concordanceIndex(first:)` | 50 | 1–200 |
+
+Requesting `limit: 500` on `search` returns 100 rows and no warning. Do not treat the number of
+results as confirmation you received everything.
+
+## Silent empty results
+
+Two cases return an empty list rather than an error, which makes them easy to misdiagnose:
+
+- **`semanticSearch` on a translation without embeddings.** Only `spa-rv1909` has them today.
+  Any other translation returns `[]` — and still spends an embedding API call doing so. See
+  [Semantic Search](/guides/semantic-search).
+- **A parseable but out-of-range reference.** `John 3:999` resolves to an empty `verses` list.
+
+## Query limits
+
+| Limit | Value | On breach |
+|---|---|---|
+| Max depth | 15 | Validation error |
+| Max complexity | 300 | Validation error |
+| Max query string tokens | 5,000 | Validation error |
+| Max validation errors reported | 100 | Truncated |
+
+`concordance` carries a custom complexity cost proportional to its `first` argument, so a large
+page with deep nesting can exhaust the budget on its own.
+
+## Defaults differ per query
+
+Most queries default `translation` to `eng-web`. `semanticSearch` defaults to `spa-rv1909`,
+because that is the only translation it can actually serve. `concordance` and
+`concordanceIndex` require `translation` explicitly — there is no default.
+
+Being explicit everywhere is the safer habit.
+
+## Relay node lookup is not implemented
+
+`Translation` and `Book` expose an `id: ID!` field described as a Relay global object id, but
+there is no working `node(id:)` entry point to resolve one with. Treat those `id` values as
+opaque identifiers, not as fetchable handles.
+
+## Introspection is enabled
+
+Full schema introspection is available to any authenticated caller, so GraphQL tooling —
+codegen, Apollo Sandbox, IDE plugins — works against the live endpoint once you supply a key.
+
+## Versioning
+
+There is no API version in the URL or a header. The schema evolves additively: new fields and
+queries are added, existing ones are not removed or retyped without warning. The generated
+[API Reference](/api-reference) always reflects what is deployed.
+
+The two exceptions already noted — `Mutation.testField` and the `testament` inconsistency — are
+the known cases where a future breaking cleanup is plausible.

@@ -1,0 +1,167 @@
+---
+id: ruby
+title: Ruby
+sidebar_position: 2
+description: Using the bibleql-ruby gem.
+---
+
+import { GRAPHQL_ENDPOINT, SDK } from "@site/src/constants";
+
+# Ruby
+
+An idiomatic Ruby client for BibleQL.
+
+- **Package:** <a href={SDK.ruby.registry}>`bibleql-ruby` on RubyGems</a>
+- **Source:** <a href={SDK.ruby.repo}>github.com/lporras/bibleql-ruby</a>
+- **License:** MIT
+
+## Install
+
+```ruby title="Gemfile"
+gem "bibleql-ruby"
+```
+
+```bash
+bundle install
+```
+
+Or directly:
+
+```bash
+gem install bibleql-ruby
+```
+
+## Configure
+
+```ruby
+require "bibleql"
+
+BibleQL.configure do |config|
+  config.api_key = ENV.fetch("BIBLEQL_API_KEY")
+  config.api_url = "https://bibleql.org/graphql"
+  config.default_translation = "eng-web"
+end
+
+client = BibleQL.client
+```
+
+Or per instance, which is easier to test:
+
+```ruby
+client = BibleQL::Client.new(
+  api_key: ENV.fetch("BIBLEQL_API_KEY"),
+  api_url: "https://bibleql.org/graphql",
+  default_translation: "spa-rv1909"
+)
+```
+
+:::warning Set `api_url` explicitly
+The gem's built-in default points at a Render-hosted URL, not
+<code>{GRAPHQL_ENDPOINT}</code>. Pin it if you want the canonical endpoint.
+:::
+
+For where this belongs in a Rails app, using Rails credentials, and choosing between global
+and per-instance clients, see [Configuring the SDKs](/sdks/configuration).
+
+The examples below all assume a `client` built as above.
+
+## Reading passages
+
+```ruby
+passage = client.passage("John 3:16")
+
+passage.reference       # => "John 3:16"
+passage.text            # => "For God so loved the world..."
+passage.translation_id  # => "eng-web"
+passage.verses          # => [#<BibleQL::Verse ...>]
+```
+
+Override the translation per call:
+
+```ruby
+client.passage("Juan 3:16", translation: "spa-rv1909")
+```
+
+## Verses and chapters
+
+```ruby
+verse = client.verse("MAT", 5, 3)
+verse.book_name  # => "Matthew"
+verse.chapter    # => 5
+verse.verse      # => 3
+verse.text
+
+verses = client.chapter("MAT", 5)
+```
+
+## Search
+
+```ruby
+results = client.search("love", limit: 5)
+
+results.each do |verse|
+  puts "#{verse.book_name} #{verse.chapter}:#{verse.verse}"
+  puts verse.text
+end
+```
+
+Remember this is substring matching, not stemming — see [Searching the
+Bible](/guides/search).
+
+## Random verse
+
+```ruby
+client.random_verse
+client.random_verse(testament: "NT")
+client.random_verse(books: "PSA")
+```
+
+`testament` takes the strings `"OT"` and `"NT"`. Passing `books` makes `testament` be ignored
+— see [API Behavior](/reference/api-behavior#filters-compose-differently-in-different-queries).
+
+## Verse of the day
+
+```ruby
+client.verse_of_the_day
+client.verse_of_the_day(date: "2026-01-01")
+```
+
+Returns a `Passage`, which may hold more than one verse.
+
+## Discovery
+
+```ruby
+client.translations           # => [#<BibleQL::Translation ...>]
+client.translation("eng-web") # with .books
+client.languages              # .code, .translation_count, .translations
+client.books                  # canonical 66
+client.bible_index            # .chapters => [#<BibleQL::Chapter number= verse_count=>]
+```
+
+## Error handling
+
+```ruby
+begin
+  client.passage("Nonexistent 1:1")
+rescue BibleQL::NotFoundError => e
+  warn "Not found: #{e.message}"
+rescue BibleQL::AuthenticationError
+  warn "Check BIBLEQL_API_KEY"
+rescue BibleQL::RateLimitError
+  warn "Rate limited — back off"
+rescue BibleQL::TimeoutError, BibleQL::ConnectionError => e
+  warn "Transient network problem: #{e.message}"
+rescue BibleQL::QueryError => e
+  warn "GraphQL error: #{e.message}"
+  warn e.errors.inspect # the raw error array
+end
+```
+
+`BibleQL::ServerError` covers 5xx responses. See [Errors](/reference/errors) for what each
+maps to on the wire.
+
+## Not covered by the gem
+
+`semanticSearch`, `concordance` and `concordanceIndex` have no methods in the current release.
+Use the GraphQL documents from [Semantic Search](/guides/semantic-search) and
+[Concordance](/guides/concordance) with any HTTP client.

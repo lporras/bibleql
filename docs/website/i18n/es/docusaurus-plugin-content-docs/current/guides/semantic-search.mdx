@@ -1,0 +1,85 @@
+---
+id: semantic-search
+title: Búsqueda semántica
+sidebar_position: 6
+description: Encontrar versículos por significado usando embeddings, y la única traducción que lo admite.
+---
+
+import ApiExample from "@site/src/components/ApiExample";
+import { SEMANTIC_SEARCH_TRANSLATION } from "@site/src/constants";
+
+# Búsqueda semántica
+
+`semanticSearch` encuentra versículos por **significado** en lugar de por redacción. Describes
+una idea y recibes versículos que la expresan, incluso cuando no comparten ninguna palabra con
+tu consulta.
+
+:::warning Solo una traducción tiene embeddings
+La búsqueda semántica requiere embeddings precalculados, y actualmente solo
+<code>{SEMANTIC_SEARCH_TRANSLATION}</code> (Reina Valera 1909) los tiene.
+
+Consultar cualquier otra traducción devuelve un **arreglo vacío, no un error** — así que una
+búsqueda semántica en inglés no devuelve nada, en silencio. Es el comportamiento más confuso
+de la API; revisa la traducción antes de suponer que tu consulta está mal.
+:::
+
+Por eso el ejemplo siguiente fija `spa-rv1909` sin importar el idioma en que leas esta
+documentación.
+
+<ApiExample op="semanticSearch" />
+
+## Cómo funciona
+
+El texto de tu consulta se convierte en un vector de embedding y luego se compara con los
+embeddings de los versículos por distancia coseno. Los resultados llegan ordenados por
+`similarity`, de mayor a menor.
+
+`similarity` va de `0.0` a `1.0`. Es una medida **relativa**: útil para ordenar, pero el número
+absoluto significa poco por sí solo.
+
+No des por hecho que las puntuaciones serán altas. En el ejemplo anterior, una consulta que
+coincide bastante bien con el texto apenas llega a `0.66`, y el quinto resultado es `0.56`. Un
+umbral de `0.7` habría descartado todos. Calibra cualquier umbral con resultados reales de tus
+propias consultas en lugar de elegir un número redondo.
+
+## Argumentos
+
+| Argumento | Por defecto | Notas |
+|---|---|---|
+| `query` | obligatorio | Lenguaje natural, en el idioma de la traducción |
+| `translation` | `spa-rv1909` | El valor por defecto es el único que hoy devuelve resultados |
+| `limit` | `10` | Limitado a 50 |
+
+Consulta en el mismo idioma que la traducción. Como `spa-rv1909` está en español, las consultas
+en español funcionan notablemente mejor que las inglesas: `el amor de Dios` rendirá mejor que
+`the love of God` aunque ambas devuelvan algo.
+
+## La semántica frente a las otras dos
+
+| | `semanticSearch` | `search` | `concordance` |
+|---|---|---|---|
+| Encuentra | Significado | Subcadena literal | Palabra y sus formas |
+| Orden | Similitud | Canónico | Canónico |
+| Exhaustiva | No | No | Sí |
+| Requiere preparación | Embeddings | Nada | Índice de concordancia |
+
+Usa la búsqueda semántica cuando sea improbable que las palabras del usuario aparezcan en el
+texto: «versículos sobre la ansiedad», «qué dice sobre perdonar a los enemigos». Usa las otras
+cuando la redacción importa.
+
+## Coste y modos de fallo
+
+Cada llamada genera un embedding a través de un servicio externo, lo que la convierte en la
+query más costosa de la API y la única con una dependencia de red propia. Dos consecuencias:
+
+- **Cachea con generosidad.** Consultas idénticas producen resultados idénticos; no hay razón
+  para preguntar dos veces.
+- **Gestiona la caída del servicio.** Si el servicio de embeddings no está disponible recibes:
+
+  ```json
+  { "errors": [{ "message": "Embedding service is temporarily unavailable. Please try again later." }] }
+  ```
+
+Ten en cuenta que una traducción no admitida igualmente gasta una llamada de embedding antes de
+devolver su arreglo vacío, así que valida la traducción en el cliente en lugar de descubrirlo
+en el servidor.

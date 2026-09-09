@@ -1,0 +1,170 @@
+---
+id: errors
+title: Errores
+sidebar_position: 1
+description: Todas las formas de error que devuelve BibleQL, qué las causa y cómo gestionarlas.
+---
+
+# Errores
+
+BibleQL sigue la convención de GraphQL: la mayoría de los fallos llegan con HTTP `200` y un
+arreglo `errors` de nivel superior. Solo la autenticación y los límites de peticiones usan
+códigos de estado HTTP.
+
+```json
+{
+  "errors": [{ "message": "Translation 'eng-xyz' not found" }]
+}
+```
+
+**Comprueba siempre `errors`, no solo el código de estado.** Una respuesta `200` puede seguir
+siendo un fallo.
+
+## Autenticación — HTTP 401
+
+Key ausente, mal formada, desconocida o revocada:
+
+```json
+{ "errors": [{ "message": "Invalid or missing API key" }] }
+```
+
+Esas cuatro causas comparten deliberadamente un mismo mensaje para que el endpoint no pueda
+usarse para comprobar si una key existe.
+
+Una key usada en el entorno equivocado:
+
+```json
+{ "errors": [{ "message": "API key not valid for this environment" }] }
+```
+
+Ese segundo mensaje casi siempre significa que un despliegue tomó una key `bql_test_` en
+producción, o al revés. Consulta
+[Autenticación](/getting-started/authentication#entornos).
+
+## Límite de peticiones — HTTP 429
+
+```json
+{ "errors": [{ "message": "Rate limit exceeded. Retry after 37 seconds." }] }
+```
+
+Acompañado de un encabezado `Retry-After`. Consulta
+[Límites de peticiones](/reference/rate-limits).
+
+## Traducción inválida
+
+```json
+{ "errors": [{ "message": "Translation 'eng-xyz' not found" }] }
+```
+
+Los identificadores distinguen mayúsculas y deben coincidir exactamente. Descubre los válidos
+con la query `translations` en lugar de adivinar — consulta
+[Traducciones](/guides/translations).
+
+## Referencia inválida
+
+```json
+{ "errors": [{ "message": "Invalid reference: 'Nonexistent 1:1'" }] }
+```
+
+Se lanza cuando la referencia no se puede interpretar en absoluto. Fíjate en el contraste:
+
+| Entrada | Resultado |
+|---|---|
+| `Nonexistent 1:1` | Error — no interpretable |
+| `Jhn 3:16` | Correcto — se aceptan abreviaturas |
+| `Juan 3:999` | **Correcto**, pero con una lista `verses` vacía |
+
+Un versículo fuera de rango no es un error. Comprueba si `verses` está vacía en lugar de
+esperar una excepción. Consulta [Referencias bíblicas](/guides/references).
+
+## Falta el índice de concordancia
+
+```json
+{
+  "errors": [{
+    "message": "Translation 'eng-web' has not been indexed for concordance yet. Run: rake \"concordance:index[eng-web]\""
+  }]
+}
+```
+
+La traducción existe pero no tiene índice de concordancia. Revisa `concordanceIndexedAt` en la
+traducción antes de ofrecer funciones de concordancia para ella. La tarea rake del mensaje es
+para el operador de la API, no para ti.
+
+## Entrada inválida en concordancia
+
+```json
+{ "errors": [{ "message": "word must not be blank" }] }
+```
+
+```json
+{ "errors": [{ "message": "word must be 100 characters or fewer" }] }
+```
+
+Un cursor de paginación mal formado también da error. Los cursores son opacos: devuelve
+exactamente lo que te dio `endCursor` y nunca construyas uno.
+
+## Testamento inválido
+
+```json
+{ "errors": [{ "message": "Testament must be 'OT' or 'NT'" }] }
+```
+
+Esto viene de `randomVerse`, cuyo argumento `testament` es una cadena simple. La query
+`concordance` usa un enum real, así que allí un valor inválido se detecta como error de
+validación antes de la ejecución. Consulta
+[Comportamiento de la API](/reference/api-behavior).
+
+## Servicio de embeddings no disponible
+
+```json
+{ "errors": [{ "message": "Embedding service is temporarily unavailable. Please try again later." }] }
+```
+
+Solo en `semanticSearch`. Depende de un servicio externo de embeddings; es el único modo de
+fallo transitorio que merece un reintento. Consulta
+[Búsqueda semántica](/guides/semantic-search).
+
+## Errores de validación y complejidad
+
+Las queries mal formadas, los campos desconocidos y los tipos de argumento incorrectos se
+rechazan antes de ejecutarse:
+
+```json
+{
+  "errors": [{
+    "message": "Field 'nonexistentField' doesn't exist on type 'Verse'",
+    "locations": [{ "line": 3, "column": 5 }]
+  }]
+}
+```
+
+Los errores de validación incluyen `locations`, que los errores de ejecución no traen — útil
+para señalar la parte del documento con el problema.
+
+Las queries que superan profundidad 15, complejidad 300 o 5.000 tokens se rechazan igual. Se
+reportan hasta 100 errores de validación a la vez, así que obtienes el panorama completo en
+lugar de uno por uno.
+
+## No se encontraron versículos
+
+```json
+{ "errors": [{ "message": "No verses found for the given filters" }] }
+```
+
+De `randomVerse`, cuando los filtros `testament` y `books` no coinciden con nada.
+
+## Gestionar bien los errores
+
+- Comprueba `errors` en cada respuesta, sea cual sea el estado.
+- Trata el `401` como fatal: reintentar no ayudará.
+- Trata el `429` y el error del servicio de embeddings como reintentables, con espera.
+- Trata los errores de validación como fallos de tu query, no como fallos transitorios.
+- No analices el texto de los mensajes para decidir la lógica. Los mensajes están escritos para
+  personas y pueden reformularse. Cuando necesites gestión programática, usa un SDK: ambos los
+  mapean a clases de excepción. Consulta [SDKs](/sdks).
+
+:::note Trazas de error
+Las trazas detalladas solo aparecen en el entorno de desarrollo de la propia API. Los errores
+de producción llevan un mensaje y nada más, por diseño.
+:::
