@@ -4,11 +4,11 @@
 [![codecov](https://codecov.io/gh/lporras/bibleql/branch/main/graph/badge.svg)](https://codecov.io/gh/lporras/bibleql)
 [![Donate using Liberapay](https://img.shields.io/liberapay/receives/bibleql.svg?logo=liberapay)](https://liberapay.com/bibleql/donate)
 
-A GraphQL API for querying Bible verses and passages across multiple translations. Supports localized book names so you can query in English (`"John 3:16"`), Spanish (`"Juan 3:16"`), and 30+ other languages.
+A GraphQL API for querying Bible verses and passages across multiple translations. Supports localized book names so you can query in English (`"John 3:16"`), Spanish (`"Juan 3:16"`), and dozens of other languages.
 
 ## Features
 
-- **47 Bible translations** in 31 languages — 41 public domain / freely licensed from [open-bibles](https://github.com/seven1m/open-bibles), plus 6 from [Bible List](https://biblelist.netlify.app/)
+- **40+ Bible translations** in 30+ languages — public domain / freely licensed from [open-bibles](https://github.com/seven1m/open-bibles), plus extras from [Bible List](https://biblelist.netlify.app/). Query `translations` or `languages` for the current figures.
 - **Flexible passage lookup** — single verses, ranges, multi-ranges (e.g., `"Matthew 25:31-33,46"`)
 - **Localized book names** — query using book names in the translation's language (e.g., `"Mateo 28:18-20"` for Spanish)
 - **Full-text search** across verses
@@ -22,6 +22,15 @@ A GraphQL API for querying Bible verses and passages across multiple translation
 - **Rate limiting** — 100 req/min per IP, 1,000 req/day per API key
 - **Interactive Playground** at `/playground` for exploring the API
 - **Admin panel** at `/admin` for managing API keys and requests
+
+## Documentation
+
+Full API documentation, in English and Spanish: **[docs.bibleql.org](https://docs.bibleql.org)**
+
+Guides, a quickstart, authentication, and a GraphQL reference generated from the schema itself.
+The site lives in [`docs/website`](docs/website) and is deployed by
+[`.github/workflows/docs.yml`](.github/workflows/docs.yml) — see
+[CONTRIBUTING.md](CONTRIBUTING.md#documentation-site) to run it locally.
 
 ## Playground
 
@@ -43,9 +52,13 @@ The interactive GraphQL playground is available at [`/playground`](https://bible
 
 ## Client Libraries
 
-- **Ruby:** [bibleql-ruby](https://github.com/lporras/bibleql-ruby) — idiomatic Ruby client gem
-- **Node.js:** [bibleql-js](https://github.com/lporras/bibleql-js) — JavaScript/TypeScript client package
+| Language | Package | Source |
+|----------|---------|--------|
+| Ruby | [`bibleql-ruby`](https://rubygems.org/gems/bibleql-ruby) (RubyGems) | [lporras/bibleql-ruby](https://github.com/lporras/bibleql-ruby) |
+| Node.js / TypeScript | [`bibleql-js`](https://www.npmjs.com/package/bibleql-js) (npm) | [lporras/bibleql-js](https://github.com/lporras/bibleql-js) |
+
 - **Examples:** [bibleql-example](https://github.com/lporras/bibleql-example) — working examples using both SDKs
+- **Setup guide:** [Configuring the SDKs](https://docs.bibleql.org/sdks/configuration)
 
 ## Prerequisites
 
@@ -249,7 +262,7 @@ Response:
 | `passage(translation, reference)` | Look up a passage (e.g., `"John 3:16"`, `"Mateo 28:18-20"`) |
 | `chapter(translation, book, chapter)` | Get all verses in a chapter |
 | `verse(translation, book, chapter, verse)` | Get a single verse |
-| `search(translation, query, limit)` | Full-text search across verses |
+| `search(translation, query, limit)` | Case-insensitive substring search across verses (no stemming — use `concordance` for that) |
 | `semanticSearch(query, translation, limit)` | Search verses by semantic meaning using AI embeddings |
 | `randomVerse(translation, testament, books)` | Get a random verse with optional filters |
 | `verseOfTheDay(translation, date)` | Get the curated verse of the day |
@@ -257,7 +270,9 @@ Response:
 | `concordance(translation, word, book, testament, first, after)` | Exhaustive, canonically-ordered concordance for a word, with per-book counts and KWIC context |
 | `concordanceIndex(translation, prefix, minOccurrences, first)` | Alphabetical word index with occurrence frequencies |
 
-See [docs/example_queries.md](docs/example_queries.md) for complete examples with responses for every query.
+Each query is documented with runnable GraphQL, cURL, Ruby and Node.js examples at
+[docs.bibleql.org](https://docs.bibleql.org/api-reference). See also
+[docs/example_queries.md](docs/example_queries.md) for raw request/response pairs for every query.
 
 ### Reference Formats
 

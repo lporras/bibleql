@@ -1,2 +1,6 @@
 web: bin/rails server
 css: bin/rails tailwindcss:watch
+# Serves both locales (English at /, Spanish at /es/) on port 3001 so the
+# language switcher works. Use `bin/docs --watch` separately if you want hot
+# reload while writing docs. Skip it with: foreman start -f Procfile.dev -m docs=0
+docs: bin/docs

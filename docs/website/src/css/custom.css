@@ -1,0 +1,53 @@
+/**
+ * BibleQL documentation theme.
+ *
+ * Both light and dark palettes are defined explicitly so the site never inherits
+ * ambiguous colours from the host.
+ */
+
+/* Primary tracks the indigo of public/icon.svg, which is also the docs logo. */
+:root {
+  --ifm-color-primary: #4338ca;
+  --ifm-color-primary-dark: #3c32b6;
+  --ifm-color-primary-darker: #392fac;
+  --ifm-color-primary-darkest: #2f278d;
+  --ifm-color-primary-light: #5449d2;
+  --ifm-color-primary-lighter: #5f55d5;
+  --ifm-color-primary-lightest: #8079e0;
+  --ifm-code-font-size: 92%;
+  --ifm-font-family-monospace: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+    "Liberation Mono", monospace;
+  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="dark"] {
+  --ifm-color-primary: #a5b4fc;
+  --ifm-color-primary-dark: #8496fa;
+  --ifm-color-primary-darker: #7488f9;
+  --ifm-color-primary-darkest: #445ff6;
+  --ifm-color-primary-light: #c6d2fe;
+  --ifm-color-primary-lighter: #d6e0ff;
+  --ifm-color-primary-lightest: #ffffff;
+  --docusaurus-highlighted-code-line-bg: rgba(255, 255, 255, 0.12);
+}
+
+/* Verse text quoted in examples reads better with a little room to breathe. */
+blockquote {
+  border-left: 4px solid var(--ifm-color-primary-lighter);
+}
+
+/* Wide argument tables in the generated reference must scroll themselves rather
+   than making the whole page scroll sideways. */
+.markdown table {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+/* Translation identifiers appear constantly in prose, so keep them from breaking
+   mid-token. Scoped to INLINE code only: `white-space: nowrap` collapses runs of
+   whitespace, so applying it to a <pre> block's <code> silently flattens all
+   indentation. */
+.markdown :not(pre) > code {
+  white-space: nowrap;
+}

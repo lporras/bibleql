@@ -1,0 +1,106 @@
+---
+id: translations
+title: Bible Translations
+sidebar_position: 1
+description: How translation identifiers work, how to discover what is available, and what the licenses mean.
+---
+
+import ApiExample from "@site/src/components/ApiExample";
+
+# Bible Translations
+
+A **translation** is one specific edition of the Bible. You address it with a **translation
+identifier** — the value every query's `translation` argument expects.
+
+## Identifier shape
+
+Identifiers follow a `<language>-<edition>` pattern:
+
+```text
+eng-web        World English Bible
+eng-kjv        King James Version
+spa-rv1909     Reina Valera 1909
+spa-bes        La Biblia en Español Sencillo
+```
+
+The first three letters are the ISO 639-3 language code; the rest identifies the edition.
+Identifiers are stable and case-sensitive.
+
+Do not try to construct one by guessing. Use `translations` to discover what exists.
+
+## Discovering what is available
+
+<ApiExample op="translations" />
+
+The `note` field carries the license, which matters — see below. `hasStemming` and
+`concordanceIndexedAt` tell you whether [concordance](/guides/concordance) will work for that
+translation.
+
+For one translation with its full book and chapter structure:
+
+<ApiExample op="translation" />
+
+## Language versus translation
+
+These are different things and it is easy to conflate them:
+
+```text
+Language: Spanish (spa)
+  ├── spa-rv1909    Reina Valera 1909
+  ├── spa-bes       La Biblia en Español Sencillo
+  ├── spa-pddpt     Palabra de Dios para ti
+  └── spa-vbl       Versión Biblia Libre
+```
+
+You pass a **translation identifier** to `translation`, never a bare language code. See
+[Languages](/guides/languages) for querying by language.
+
+The documentation locale you are reading is also unrelated: `es` is a documentation language,
+`spa-rv1909` is a Bible translation.
+
+## Licensing
+
+:::danger Check the license before redistributing text
+Translations do not share one license. The `note` field on every translation tells you which
+one applies, and it is your responsibility to honour it.
+:::
+
+Most of what BibleQL serves is public domain or openly licensed:
+
+| License | Meaning |
+|---|---|
+| Public Domain | No restrictions |
+| CC BY 4.0 | Attribution required |
+| CC BY-SA 4.0 | Attribution required, derivative works share the same license |
+
+Public domain examples include `eng-web`, `eng-kjv`, `eng-asv` and `spa-rv1909`. Openly
+licensed examples include `spa-bes` (CC BY 4.0) and `spa-vbl` (CC BY-SA 4.0).
+
+Some translations in the underlying dataset are **copyrighted, all rights reserved**. Those
+are not part of the open corpus, and holding an API key does not grant you a license to them.
+If a translation's `note` is not a public domain or Creative Commons statement, assume you
+need permission from the rights holder before redistributing its text.
+
+Displaying attribution is good practice regardless — `translationName` and `translationNote`
+come back on every `passage` response precisely so you can render a credit line.
+
+## Which translation should examples use?
+
+If you are building something and need a safe default:
+
+- **English** — `eng-web` (World English Bible, public domain, modern language)
+- **Spanish** — `spa-rv1909` (Reina Valera 1909, public domain, and the only translation with
+  [semantic search](/guides/semantic-search) embeddings)
+
+## Feature support varies
+
+Not every translation supports every query:
+
+| Feature | Requirement |
+|---|---|
+| `passage`, `verse`, `chapter`, `search` | All translations |
+| `concordance`, `concordanceIndex` | Translation must be indexed — check `concordanceIndexedAt` |
+| `semanticSearch` | Translation must have embeddings — currently `spa-rv1909` only |
+| Stemmed concordance matching | Check `hasStemming` |
+
+Each guide states its own requirement.

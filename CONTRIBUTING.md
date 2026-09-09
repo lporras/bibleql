@@ -75,8 +75,90 @@ Key directories to be aware of:
 
 1. Define the field in `app/graphql/types/query_type.rb`
 2. Create any new types in `app/graphql/types/`
-3. Add tests in `spec/graphql/` or `spec/requests/`
-4. Update the playground default query if useful (`app/views/playground/show.html.erb`)
+3. **Describe everything.** Every type, field and argument needs a `description:`.
+   `spec/graphql/schema_documentation_spec.rb` fails otherwise, because these descriptions
+   are what the published API reference is built from.
+4. Regenerate the schema and commit it:
+   ```bash
+   bundle exec rake docs:schema
+   ```
+   CI fails if `docs/generated/schema.graphql` does not match `app/graphql/`.
+5. Add tests in `spec/graphql/` or `spec/requests/`
+6. Update the playground default query if useful (`app/views/playground/show.html.erb`)
+7. Consider adding the query to `docs/website/src/examples/index.ts` so it gets
+   GraphQL/cURL/Ruby/Node example tabs in the docs
+
+## Documentation site
+
+The public documentation at [docs.bibleql.org](https://docs.bibleql.org) is a Docusaurus site
+in `docs/website`. Rails does not serve it.
+
+Requires Node.js 22.12 or newer. It runs as part of `bin/dev` (the `docs` process in
+`Procfile.dev`), or on its own:
+
+```bash
+bin/docs          # both locales: http://localhost:3001/ and /es/
+```
+
+Dependencies install themselves on first run. Rails owns port 3000, so the docs use 3001
+(`DOCS_PORT` to change it).
+
+If you only want Rails, skip the docs process:
+
+```bash
+foreman start -f Procfile.dev -m docs=0
+```
+
+### Checking both languages
+
+`bin/docs` builds **both** locales and serves them from one origin, which is what makes the
+navbar language dropdown work — clicking Español on any page takes you to the same page under
+`/es/`.
+
+For hot reload while writing, use watch mode. `docusaurus start` serves only **one** locale per
+process, so choose it:
+
+```bash
+bin/docs --watch                  # English
+DOCS_LOCALE=es bin/docs --watch   # Spanish, served at /es/
+```
+
+Two caveats in watch mode:
+
+- The language dropdown links to the locale that is not running, so it 404s. Use `bin/docs` to
+  test switching.
+- Never run two watch processes against `docs/website` at once. They share the `.docusaurus`
+  cache and overwrite each other, which fails the webpack build with JSON parse errors. If that
+  happens, `rm -rf docs/website/.docusaurus`.
+
+`bin/docs` fails on broken links and broken anchors, so run it before opening a docs PR.
+
+### How the API reference is generated
+
+```text
+app/graphql/**  ──rake docs:schema──▶  docs/generated/schema.graphql  (committed)
+                                                    │
+                                     graphql-to-doc │
+                                                    ▼
+                                  docs/website/docs/api-reference/  (generated, gitignored)
+```
+
+Never edit anything under `docs/website/docs/api-reference/` — it is regenerated on every
+build. To change the reference, change the `description:` in the Ruby schema and rerun
+`bundle exec rake docs:schema`.
+
+### Writing docs
+
+- Hand-written pages live in `docs/website/docs/`; Spanish translations mirror them under
+  `docs/website/i18n/es/docusaurus-plugin-content-docs/current/`.
+- Shared values (URLs, rate limits, per-locale example translations) belong in
+  `docs/website/src/constants.ts` — do not hard-code them on a page.
+- Code examples belong in `docs/website/src/examples/index.ts`, rendered with
+  `<ApiExample op="..." />`. The cURL tab is derived from the GraphQL document, so you never
+  write the JSON escaping by hand. Set `ruby` or `node` to `null` where an SDK has no method
+  rather than inventing one.
+- After adding a UI string in a component, run `npm run write-translations -- --locale es` and
+  translate the new key in `docs/website/i18n/es/code.json`.
 
 ## Reporting Issues
 

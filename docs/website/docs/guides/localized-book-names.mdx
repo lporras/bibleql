@@ -1,0 +1,93 @@
+---
+id: localized-book-names
+title: Localized Book Names
+sidebar_position: 4
+description: Querying translations using book names in their own language.
+---
+
+import ApiExample from "@site/src/components/ApiExample";
+
+# Localized Book Names
+
+Every book has a canonical three-letter id that never changes — `GEN`, `JHN`, `MAT`. On top of
+that, each translation carries its own book names, so a Spanish Bible can be queried with
+Spanish names.
+
+## Two ways to name a book
+
+Both of these return the same verse from the same translation:
+
+```graphql
+query {
+  byId: verse(translation: "spa-rv1909", book: "MAT", chapter: 28, verse: 18) {
+    bookName
+    text
+  }
+  byLocalizedName: verse(translation: "spa-rv1909", book: "Mateo", chapter: 28, verse: 18) {
+    bookName
+    text
+  }
+}
+```
+
+Note `bookName` comes back as `Mateo` either way — the response is always localized to the
+translation, regardless of how you addressed the book.
+
+## Which to use
+
+| Use | When |
+|---|---|
+| Canonical id (`MAT`) | Application code. Works in every translation, never ambiguous. |
+| Localized name (`Mateo`) | User-typed input, or when echoing what a reader would recognize. |
+
+If you are building a URL scheme or storing bookmarks, store the canonical id. It survives a
+change of translation; a localized name does not.
+
+## Discovering the names a translation uses
+
+`bibleIndex` returns every book with its localized name:
+
+<ApiExample op="bibleIndex" />
+
+Or through a translation:
+
+```graphql
+query {
+  translation(identifier: "spa-rv1909") {
+    books {
+      bookId
+      name
+    }
+  }
+}
+```
+
+This is how you build an autocomplete that accepts what a Spanish reader would actually type.
+
+## In references
+
+Localized names work inside `passage` references too:
+
+```graphql
+query {
+  passage(translation: "spa-rv1909", reference: "Mateo 28:18-20") {
+    reference
+    text
+  }
+}
+```
+
+Matching is case-insensitive, so `mateo 28:18` resolves as well as `Mateo 28:18`.
+
+:::warning One limitation
+Localized references cannot span chapters. Single verses, ranges and comma-separated
+multi-ranges all work, but only within one chapter — see
+[Bible References](/guides/references#localized-references) for the details and the
+workaround.
+:::
+
+## Fallback behaviour
+
+If a translation has no localized name for a book, `bookName` falls back to the canonical
+English name. You will never get an empty book name, but you may occasionally get an English
+one in a non-English translation where the source data is incomplete.

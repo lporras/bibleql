@@ -1,0 +1,69 @@
+---
+id: search
+title: Buscar en la Biblia
+sidebar_position: 5
+description: Cómo coincide la query search, y cuándo usar concordancia o búsqueda semántica en su lugar.
+---
+
+import ApiExample from "@site/src/components/ApiExample";
+
+# Buscar en la Biblia
+
+BibleQL tiene tres formas distintas de encontrar versículos, y elegir la equivocada es la
+fuente de sorpresas más común. Esta página cubre `search`; las otras dos tienen su propia guía.
+
+## Cómo elegir entre las tres
+
+| Query | Coincidencia | Orden | Úsala para |
+|---|---|---|---|
+| `search` | Subcadena, sin distinguir mayúsculas | Canónico | Buscar una frase literal rápido |
+| `concordance` | Palabra con stemming | Canónico, exhaustivo | Estudio de palabras, todas las apariciones |
+| `semanticSearch` | Significado, vía embeddings | Por similitud | «Versículos sobre el perdón» |
+
+## Cómo coincide search
+
+<ApiExample op="search" />
+
+`search` hace una **coincidencia de subcadena sin distinguir mayúsculas** sobre el texto del
+versículo. Eso tiene consecuencias concretas:
+
+- `amor` coincide con `amor`, `Amor`, `amores` y `amoroso` — cualquier versículo cuyo texto
+  contenga esas letras.
+- `amor` no coincide con `amaba`: no comparten la subcadena.
+- **No hay stemming.** Buscar `correr` no encontrará `corrió`.
+- No hay sintaxis de frases ni booleanos. Toda la cadena de búsqueda es una sola subcadena.
+
+Si quieres coincidencia lingüística — que `amor` encuentre `amores` y `amoroso` por su raíz —
+usa [`concordance`](/guides/concordance), que pasa por el diccionario de stemming de la
+traducción.
+
+## Resultados y límites
+
+Los resultados llegan en orden canónico (Génesis → Apocalipsis, luego capítulo, luego
+versículo), no por relevancia. No hay ranking.
+
+El argumento `limit` es `25` por defecto y está **limitado a 100** en el servidor. Pedir 500
+devuelve 100 sin error, así que no asumas que recibiste todo lo que pediste.
+
+`search` no tiene paginación. Si necesitas todas las apariciones de una palabra en lugar de las
+primeras cien, eso es exactamente para lo que existe
+[`concordance`](/guides/concordance): es exhaustiva y paginada por cursor.
+
+## Comportamiento por idioma
+
+La coincidencia de subcadenas es agnóstica al idioma, así que `search` funciona igual en todas
+las traducciones y no requiere índice. Esa es su principal ventaja: sin configuración, sin
+salvedades por traducción.
+
+También es la razón por la que no puede hacer nada más inteligente. Las mayúsculas se ignoran,
+así que `amor` sí encuentra `Amor`; pero los acentos no se normalizan, así que `oracion`
+**no** encontrará `oración`. Si tus usuarios escriben sin acentos, normaliza su entrada contra
+la ortografía de la traducción antes de buscar, o usa
+[`concordance`](/guides/concordance), que pasa por un diccionario de búsqueda real.
+
+## Recomendaciones prácticas
+
+- Buscas una frase que puedes citar exactamente → `search`
+- Estudias una palabra y sus formas → [`concordance`](/guides/concordance)
+- Describes una idea, no una redacción → [`semanticSearch`](/guides/semantic-search)
+- Necesitas todas las coincidencias, no una muestra → [`concordance`](/guides/concordance)

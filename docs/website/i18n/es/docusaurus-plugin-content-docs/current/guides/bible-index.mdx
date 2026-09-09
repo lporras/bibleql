@@ -1,0 +1,68 @@
+---
+id: bible-index
+title: Índice bíblico
+sidebar_position: 9
+description: Descubrir la estructura de libros, capítulos y número de versículos de una traducción.
+---
+
+import ApiExample from "@site/src/components/ApiExample";
+
+# Índice bíblico
+
+`bibleIndex` devuelve la **estructura** de una traducción: cada libro, su nombre localizado,
+cuántos capítulos tiene y cuántos versículos hay en cada capítulo. Sin texto de versículos.
+
+Esto es con lo que se construye la navegación.
+
+<ApiExample op="bibleIndex" />
+
+## Estructura completa en una petición
+
+```graphql
+query {
+  bibleIndex(translation: "spa-rv1909") {
+    bookId
+    name
+    testament
+    position
+    chapterCount
+    chapters {
+      number
+      verseCount
+    }
+  }
+}
+```
+
+Con eso basta para renderizar un selector completo de libro → capítulo → versículo sin tocar el
+texto. Pídelo una vez, cachéalo y usa eso para toda tu navegación.
+
+:::warning No selecciones `verses` aquí
+`Chapter` también expone un campo `verses`. Pedirlo en todo el índice significa solicitar todos
+los versículos de la Biblia entera en una query, lo que superará el presupuesto de complejidad
+— y si no lo hiciera, sería una respuesta enorme.
+
+Usa `bibleIndex` para la estructura y luego
+[`chapter`](/getting-started/first-query) para traer el texto del capítulo que el usuario abrió.
+:::
+
+## El número de versículos varía entre traducciones
+
+No lo fijes en el código. El número de capítulos y de versículos varía: algunas traducciones
+unen o dividen versículos, y la versificación difiere genuinamente entre ediciones. Lee siempre
+los totales del índice de la traducción que estés mostrando.
+
+Por eso mismo tampoco deberías asumir que una referencia válida en una traducción se resuelve en
+otra.
+
+## Estructura frente a libros canónicos
+
+| Query | Devuelve | Alcance |
+|---|---|---|
+| `books` | Los 66 libros canónicos, nombres en inglés | Independiente de la traducción |
+| `bibleIndex(translation:)` | Los libros presentes en esa traducción, nombres localizados y estructura de capítulos | Una traducción |
+
+Usa `books` para una lista canónica; usa `bibleIndex` cuando la respuesta dependa de la
+traducción.
+
+<ApiExample op="books" />

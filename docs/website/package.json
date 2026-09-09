@@ -1,0 +1,53 @@
+{
+  "name": "bibleql-docs",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Documentation website for the BibleQL GraphQL API",
+  "scripts": {
+    "docusaurus": "docusaurus",
+    "prestart": "docusaurus graphql-to-doc --force",
+    "start": "docusaurus start",
+    "api": "docusaurus graphql-to-doc --force",
+    "prebuild": "docusaurus graphql-to-doc --force",
+    "build": "docusaurus build",
+    "serve": "docusaurus serve",
+    "preview": "docusaurus build && docusaurus serve",
+    "clear": "docusaurus clear",
+    "write-translations": "docusaurus write-translations",
+    "typecheck": "tsc"
+  },
+  "dependencies": {
+    "@docusaurus/core": "^3.10.2",
+    "@docusaurus/preset-classic": "^3.10.2",
+    "@graphql-markdown/diff": "^1.1.18",
+    "@graphql-markdown/docusaurus": "^1.36.0",
+    "@graphql-tools/graphql-file-loader": "^8.1.20",
+    "@mdx-js/react": "^3.1.0",
+    "clsx": "^2.1.1",
+    "graphql": "^16.11.0",
+    "prism-react-renderer": "^2.4.1",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@docusaurus/module-type-aliases": "^3.10.2",
+    "@docusaurus/tsconfig": "^3.10.2",
+    "@docusaurus/types": "^3.10.2",
+    "typescript": "~5.6.2"
+  },
+  "browserslist": {
+    "production": [
+      ">0.5%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 3 chrome version",
+      "last 3 firefox version",
+      "last 5 safari version"
+    ]
+  },
+  "engines": {
+    "node": ">=22.12.0"
+  }
+}

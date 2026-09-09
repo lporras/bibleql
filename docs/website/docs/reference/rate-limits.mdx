@@ -1,0 +1,102 @@
+---
+id: rate-limits
+title: Rate Limits
+sidebar_position: 2
+description: The configured request limits, the 429 response, and how to back off correctly.
+---
+
+import { RATE_LIMITS } from "@site/src/constants";
+
+# Rate Limits
+
+Three limits apply. All are enforced at the edge, before your query is parsed.
+
+<table>
+  <thead>
+    <tr><th>Scope</th><th>Limit</th><th>Window</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>GraphQL requests per IP</td>
+      <td>{RATE_LIMITS.graphqlPerIp.limit}</td>
+      <td>per {RATE_LIMITS.graphqlPerIp.period}</td>
+    </tr>
+    <tr>
+      <td>GraphQL requests per API key</td>
+      <td>{RATE_LIMITS.graphqlPerKey.limit.toLocaleString("en-US")}</td>
+      <td>per {RATE_LIMITS.graphqlPerKey.period}</td>
+    </tr>
+    <tr>
+      <td>API key request form per IP</td>
+      <td>{RATE_LIMITS.apiKeyRequestPerIp.limit}</td>
+      <td>per {RATE_LIMITS.apiKeyRequestPerIp.period}</td>
+    </tr>
+  </tbody>
+</table>
+
+The per-IP and per-key limits are independent — you can exhaust either one. The health check
+endpoint is exempt.
+
+## Per-key means per key, not per host
+
+The per-key limit is tracked against the **first 12 characters of your token**, which is the
+key's prefix. Every process, server and region using the same key shares one daily allowance.
+Running ten instances does not give you ten times the quota.
+
+If you need isolated quotas for separate workloads, request separate keys on separate email
+addresses — see [API Keys](/getting-started/api-keys#one-key-per-email-per-environment).
+
+## The 429 response
+
+Exceeding a limit returns HTTP `429` with a `Retry-After` header:
+
+```http
+HTTP/1.1 429 Too Many Requests
+Content-Type: application/json
+Retry-After: 37
+```
+
+```json
+{ "errors": [{ "message": "Rate limit exceeded. Retry after 37 seconds." }] }
+```
+
+`Retry-After` is the number of seconds until the current window rolls over. Honour it rather
+than retrying immediately — retrying inside the window consumes nothing but still fails.
+
+Note that windows are fixed, not sliding: the per-minute counter resets at the boundary, so
+`Retry-After` can be anywhere from 1 to 60 seconds.
+
+## Staying under the limits
+
+The most effective measures, roughly in order of impact:
+
+- **Cache what does not change.** `translations`, `languages`, `books` and `bibleIndex` change
+  only when the corpus does. Fetch them at startup, not per request.
+- **Ask for one query, not five.** GraphQL lets you request several fields in a single
+  document; a book list and a passage can share one request.
+- **Cache `verseOfTheDay`** for the rest of the day — the answer is stable.
+- **Cache `semanticSearch`** by query string. It is the most expensive query in the API.
+- **Request only the fields you need.** This does not affect the request count, but it does
+  affect latency and complexity budget.
+
+## Backing off
+
+On a `429`, sleep for `Retry-After` seconds and retry once. If you are running a batch job,
+add jitter so parallel workers do not all wake at the same instant.
+
+Both official SDKs raise a distinct error for this case — `BibleQL::RateLimitError` in Ruby and
+`RateLimitError` in Node — so you can catch it specifically rather than inspecting status
+codes. See [SDKs](/sdks).
+
+## Query complexity is a separate ceiling
+
+Rate limits cap how *often* you can ask. Complexity caps how *much* one query can ask for:
+
+| Limit | Value |
+|---|---|
+| Max depth | 15 |
+| Max complexity | 300 |
+| Max query string tokens | 5,000 |
+
+Exceeding these returns a validation error, not a `429`, and it does not count against your
+quota. See [API Behavior](/reference/api-behavior).

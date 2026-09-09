@@ -1,0 +1,100 @@
+---
+id: first-query
+title: Tu primera query
+sidebar_position: 5
+description: Cómo leer y escribir queries de BibleQL, desde un versículo hasta estructuras anidadas.
+---
+
+import ApiExample from "@site/src/components/ApiExample";
+
+# Tu primera query
+
+Si no has usado GraphQL antes, esta es la versión corta: describes la forma de la respuesta que
+quieres, y esa es la forma que recibes.
+
+## Pide un versículo
+
+<ApiExample op="verse" />
+
+Fíjate en `book: "JHN"`. El id canónico de tres letras funciona en todas las traducciones. Un
+nombre localizado como `"Juan"` también funciona, siempre que corresponda a la traducción que
+estás consultando.
+
+## Pide más campos
+
+Añadir campos es libre: nada llega si no lo pides, y nada se oculta si lo pides. Agregar
+`bookId` a la query anterior lo devuelve junto al resto; quitar `text` evita que se envíe el
+texto del versículo.
+
+Esa es la diferencia práctica principal con una API REST: el tamaño de la respuesta lo decides
+tú, no el servidor.
+
+## Pide un capítulo completo
+
+<ApiExample op="chapter" />
+
+`chapter` devuelve una lista de versículos. Todos los campos de lista del esquema se comportan
+igual: seleccionas los campos que quieres de cada elemento.
+
+## Anida a través de relaciones
+
+Los tipos se conectan entre sí, así que una petición puede recorrer varios niveles:
+
+```graphql
+query {
+  translation(identifier: "spa-rv1909") {
+    name
+    books {
+      bookId
+      name
+      chapterCount
+    }
+  }
+}
+```
+
+Eso devuelve la traducción y todos sus libros con su número de capítulos, en una sola ida y
+vuelta.
+
+:::warning El anidamiento tiene límites
+Las queries están limitadas a profundidad 15 y complejidad 300. Una query muy anidada — por
+ejemplo todos los capítulos *y* todos los versículos de todos los libros — será rechazada en
+lugar de servirse lentamente. Usa [`bibleIndex`](/guides/bible-index) para la estructura y
+luego pide el texto que realmente necesites.
+:::
+
+## Usa variables en lugar de interpolar cadenas
+
+Cuando una query vive en el código de una aplicación, pasa los valores como variables en vez de
+construir el documento concatenando cadenas:
+
+```graphql
+query GetPassage($translation: String!, $reference: String!) {
+  passage(translation: $translation, reference: $reference) {
+    reference
+    text
+  }
+}
+```
+
+```json
+{
+  "translation": "spa-rv1909",
+  "reference": "Juan 3:16"
+}
+```
+
+Envíalas en la clave `variables`, junto a `query`, en el cuerpo del POST. Así el documento
+queda estático y cacheable, y evitas errores de comillas.
+
+## Nombra tus operaciones
+
+`query GetPassage(...)` es una operación con nombre. Los nombres no cuestan nada y hacen que
+los logs del servidor y las herramientas de cliente sean mucho más legibles. Una
+`query { ... }` anónima está bien para explorar.
+
+## Siguiente
+
+- [Referencias bíblicas](/guides/references) — todo lo que acepta el argumento `reference`
+- [Referencia de la API](/api-reference) — el esquema completo
+- [SDKs](/sdks) — evita GraphQL y llama métodos

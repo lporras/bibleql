@@ -1,0 +1,107 @@
+---
+id: translations
+title: Traducciones de la Biblia
+sidebar_position: 1
+description: Cómo funcionan los identificadores de traducción, cómo descubrir las disponibles y qué significan las licencias.
+---
+
+import ApiExample from "@site/src/components/ApiExample";
+
+# Traducciones de la Biblia
+
+Una **traducción** es una edición concreta de la Biblia. Se identifica con un **identificador
+de traducción**, el valor que espera el argumento `translation` de cada query.
+
+## Forma del identificador
+
+Los identificadores siguen el patrón `<idioma>-<edición>`:
+
+```text
+spa-rv1909     Reina Valera 1909
+spa-bes        La Biblia en Español Sencillo
+eng-web        World English Bible
+eng-kjv        King James Version
+```
+
+Las primeras tres letras son el código de idioma ISO 639-3; el resto identifica la edición. Los
+identificadores son estables y distinguen mayúsculas de minúsculas.
+
+No intentes construir uno adivinando. Usa `translations` para descubrir los que existen.
+
+## Descubrir las disponibles
+
+<ApiExample op="translations" />
+
+El campo `note` contiene la licencia, y eso importa — mira más abajo. `hasStemming` y
+`concordanceIndexedAt` te indican si la [concordancia](/guides/concordance) funcionará para esa
+traducción.
+
+Para una traducción con su estructura completa de libros y capítulos:
+
+<ApiExample op="translation" />
+
+## Idioma frente a traducción
+
+Son cosas distintas y es fácil confundirlas:
+
+```text
+Idioma: español (spa)
+  ├── spa-rv1909    Reina Valera 1909
+  ├── spa-bes       La Biblia en Español Sencillo
+  ├── spa-pddpt     Palabra de Dios para ti
+  └── spa-vbl       Versión Biblia Libre
+```
+
+Al argumento `translation` se le pasa un **identificador de traducción**, nunca un código de
+idioma suelto. Consulta [Idiomas](/guides/languages) para consultar por idioma.
+
+El idioma de esta documentación tampoco tiene relación: `es` es un idioma de documentación,
+`spa-rv1909` es una traducción bíblica.
+
+## Licencias
+
+:::danger Revisa la licencia antes de redistribuir texto
+Las traducciones no comparten una sola licencia. El campo `note` de cada traducción indica cuál
+se aplica, y es tu responsabilidad respetarla.
+:::
+
+La mayor parte de lo que sirve BibleQL es de dominio público o con licencia abierta:
+
+| Licencia | Significado |
+|---|---|
+| Public Domain | Sin restricciones |
+| CC BY 4.0 | Requiere atribución |
+| CC BY-SA 4.0 | Requiere atribución; las obras derivadas comparten la misma licencia |
+
+Ejemplos de dominio público: `spa-rv1909`, `eng-web`, `eng-kjv` y `eng-asv`. Ejemplos con
+licencia abierta: `spa-bes` (CC BY 4.0) y `spa-vbl` (CC BY-SA 4.0).
+
+Algunas traducciones del conjunto de datos subyacente tienen **derechos reservados**. Esas no
+forman parte del corpus abierto, y tener una API key no te concede licencia sobre ellas. Si el
+`note` de una traducción no es una declaración de dominio público o Creative Commons, asume que
+necesitas permiso del titular de los derechos antes de redistribuir su texto.
+
+Mostrar la atribución es buena práctica en cualquier caso: `translationName` y
+`translationNote` llegan en cada respuesta de `passage` precisamente para que puedas mostrar
+una línea de crédito.
+
+## ¿Qué traducción usar en los ejemplos?
+
+Si estás construyendo algo y necesitas un valor por defecto seguro:
+
+- **Español** — `spa-rv1909` (Reina Valera 1909, dominio público, y la única traducción con
+  embeddings para [búsqueda semántica](/guides/semantic-search))
+- **Inglés** — `eng-web` (World English Bible, dominio público, lenguaje moderno)
+
+## El soporte de funciones varía
+
+No todas las traducciones admiten todas las queries:
+
+| Función | Requisito |
+|---|---|
+| `passage`, `verse`, `chapter`, `search` | Todas las traducciones |
+| `concordance`, `concordanceIndex` | La traducción debe estar indexada — revisa `concordanceIndexedAt` |
+| `semanticSearch` | La traducción debe tener embeddings — hoy solo `spa-rv1909` |
+| Coincidencia con stemming en concordancia | Revisa `hasStemming` |
+
+Cada guía indica su propio requisito.

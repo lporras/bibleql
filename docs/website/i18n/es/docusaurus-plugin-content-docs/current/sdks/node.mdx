@@ -1,0 +1,202 @@
+---
+id: node
+title: Node.js
+sidebar_position: 3
+description: Usar el paquete bibleql-js desde Node.js o TypeScript.
+---
+
+import { GRAPHQL_ENDPOINT, SDK } from "@site/src/constants";
+
+# Node.js
+
+Un cliente de JavaScript/TypeScript para BibleQL. Requiere Node.js 18 o superior.
+
+- **Paquete:** <a href={SDK.node.registry}>`bibleql-js` en npm</a>
+- **Código:** <a href={SDK.node.repo}>github.com/lporras/bibleql-js</a>
+- **Licencia:** MIT
+
+## Instalación
+
+```bash
+npm install bibleql-js
+```
+
+## Configuración
+
+```typescript
+import { BibleQLClient } from "bibleql-js";
+
+const client = new BibleQLClient({
+  apiKey: process.env.BIBLEQL_API_KEY!,
+  apiUrl: "https://bibleql.org/graphql",
+  defaultTranslation: "spa-rv1909",
+  timeout: 30000,
+});
+```
+
+También hay valores por defecto globales:
+
+```typescript
+import { configure } from "bibleql-js";
+
+configure({
+  apiKey: process.env.BIBLEQL_API_KEY!,
+  defaultTranslation: "spa-rv1909",
+});
+```
+
+:::danger Solo para servidor
+Este paquete nunca debe ejecutarse en código de navegador: empaquetarlo expone tu API key. El
+propio README del paquete lo advierte. Llámalo desde un servidor, una función serverless o un
+paso de build, y reenvía los resultados a tu frontend.
+:::
+
+:::warning Configura `apiUrl` explícitamente
+El valor por defecto apunta a una URL alojada en Render en lugar de a
+<code>{GRAPHQL_ENDPOINT}</code>.
+:::
+
+Para saber dónde poner esto en una aplicación Next.js, en serverless o en un módulo
+compartido, consulta [Configurar los SDKs](/sdks/configuration).
+
+Todos los ejemplos siguientes asumen un `client` creado como arriba.
+
+## Leer pasajes
+
+```typescript
+const passage = await client.passage("Juan 3:16");
+
+console.log(passage.reference); // "Juan 3:16"
+console.log(passage.text);
+
+// Traducción por llamada
+await client.passage("John 3:16", { translation: "eng-web" });
+```
+
+## Versículos y capítulos
+
+```typescript
+const verse = await client.verse("GEN", 1, 1);
+console.log(verse.bookId, verse.bookName, verse.chapter, verse.verse, verse.text);
+
+const verses = await client.chapter("GEN", 1);
+```
+
+## Búsqueda
+
+```typescript
+const results = await client.search("amor", { limit: 10 });
+
+results.forEach((v) => {
+  console.log(`${v.bookName} ${v.chapter}:${v.verse}`, v.text);
+});
+```
+
+Coincidencia de subcadenas, no stemming — consulta
+[Buscar en la Biblia](/guides/search).
+
+## Búsqueda semántica
+
+Aquí sí está disponible, a diferencia de la gema de Ruby:
+
+```typescript
+const results = await client.semanticSearch("el amor de Dios", {
+  translation: "spa-rv1909",
+  limit: 10,
+});
+
+results.forEach((r) => console.log(r.similarity, r.verse.text));
+```
+
+Solo `spa-rv1909` tiene embeddings; cualquier otra devuelve un arreglo vacío. Consulta
+[Búsqueda semántica](/guides/semantic-search).
+
+## Versículo aleatorio
+
+```typescript
+await client.randomVerse();
+await client.randomVerse({ testament: "OT" });
+await client.randomVerse({ books: "GEN,EXO" });
+```
+
+## Versículo del día
+
+```typescript
+await client.verseOfTheDay();
+await client.verseOfTheDay({ date: "2026-01-01" });
+```
+
+## Descubrimiento
+
+```typescript
+await client.translations();
+await client.translation("spa-rv1909");
+await client.books();
+await client.languages();
+await client.bibleIndex();
+```
+
+## Gestión de errores
+
+```typescript
+import {
+  AuthenticationError,
+  ConnectionError,
+  NotFoundError,
+  RateLimitError,
+  TimeoutError,
+} from "bibleql-js";
+
+try {
+  const passage = await client.passage("Nonexistent 1:1");
+} catch (error) {
+  if (error instanceof NotFoundError) {
+    console.error("No encontrado:", error.message);
+  } else if (error instanceof AuthenticationError) {
+    console.error("Revisa BIBLEQL_API_KEY");
+  } else if (error instanceof RateLimitError) {
+    console.error("Límite superado — espera antes de reintentar");
+  } else if (error instanceof TimeoutError || error instanceof ConnectionError) {
+    console.error("Problema de red transitorio:", error.message);
+  } else {
+    throw error;
+  }
+}
+```
+
+La jerarquía:
+
+```text
+BibleQLError
+├── ConfigurationError
+├── ConnectionError
+│   └── TimeoutError
+├── APIError            (status, body)
+│   ├── AuthenticationError  (401)
+│   ├── RateLimitError       (429)
+│   └── ServerError          (5xx)
+└── QueryError          (errors[])
+    └── NotFoundError
+```
+
+## Tipos de TypeScript
+
+```typescript
+import type {
+  BibleQLConfig,
+  Book,
+  Chapter,
+  Language,
+  LocalizedBook,
+  Passage,
+  SearchResult,
+  SemanticSearchResult,
+  Translation,
+  Verse,
+} from "bibleql-js";
+```
+
+## No cubierto por el paquete
+
+`concordance` y `concordanceIndex` todavía no tienen métodos. Usa los documentos GraphQL de
+[Concordancia](/guides/concordance) con `fetch` o cualquier cliente HTTP.

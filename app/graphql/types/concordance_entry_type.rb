@@ -11,7 +11,9 @@ module Types
     field :total_occurrences, Integer, null: false,
       description: "Raw token matches; can exceed verseCount if the word repeats within a single verse."
     field :verse_count, Integer, null: false, description: "Number of distinct verses containing the word"
-    field :occurrences_by_book, [ Types::BookCountType ], null: false
-    field :occurrences_by_testament, Types::TestamentCountType, null: false
+    field :occurrences_by_book, [ Types::BookCountType ], null: false,
+      description: "Per-book distribution in canonical order. Books with no occurrences are omitted."
+    field :occurrences_by_testament, Types::TestamentCountType, null: false,
+      description: "Occurrence totals split across the Old and New Testaments"
   end
 end

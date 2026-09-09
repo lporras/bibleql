@@ -10,3 +10,15 @@ updates:
   schedule:
     interval: weekly
   open-pull-requests-limit: 10
+# Documentation site (Docusaurus). Grouped and monthly, because a docs-only
+# toolchain does not warrant the PR volume that a weekly npm ecosystem produces.
+- package-ecosystem: npm
+  directory: "/docs/website"
+  schedule:
+    interval: monthly
+  open-pull-requests-limit: 5
+  groups:
+    docusaurus:
+      patterns:
+        - "@docusaurus/*"
+        - "@graphql-markdown/*"

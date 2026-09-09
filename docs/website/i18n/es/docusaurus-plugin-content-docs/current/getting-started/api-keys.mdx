@@ -1,0 +1,63 @@
+---
+id: api-keys
+title: API Keys
+sidebar_position: 4
+description: Solicitar, rotar y gestionar API keys de BibleQL.
+---
+
+import { API_KEY_REQUEST_URL } from "@site/src/constants";
+
+# API Keys
+
+[Autenticación](/getting-started/authentication) explica cómo *enviar* una key. Esta página
+cubre su ciclo de vida.
+
+## Solicitar
+
+Envía el <a href={API_KEY_REQUEST_URL}>formulario de solicitud</a> con tu nombre, correo y el
+entorno que necesitas. Una solicitud empieza como **pendiente** y pasa a **aprobada** o
+**rechazada** cuando una persona la revisa. Recibirás un correo en cualquier caso.
+
+Conviene incluir en la descripción: qué estás construyendo, cuántas peticiones esperas
+aproximadamente y qué traducciones necesitas. Agiliza la aprobación.
+
+## Anatomía de una key
+
+```text
+bql_live_a1b2c3d4e5f6...
+└──┬───┘
+   └─ prefijo de entorno
+```
+
+Solo el prefijo te resulta significativo. En el servidor las keys se almacenan como digests
+bcrypt — el token completo no se puede recuperar de la base de datos, y por eso una key perdida
+debe reemplazarse en lugar de consultarse.
+
+Los primeros 12 caracteres también actúan como identificador para el
+[límite de peticiones por key](/reference/rate-limits), así que todas tus peticiones comparten
+una sola cuota, sea cual sea la IP de origen.
+
+## Una key por correo y por entorno
+
+Esto lo impone una restricción de unicidad. Para tener cuotas separadas por proyecto, usa
+direcciones de correo distintas.
+
+Puedes tener a la vez una key `bql_live_` y una `bql_test_` en la misma dirección — esa es la
+configuración prevista, no un truco.
+
+## Rotación
+
+No hay rotación autogestionada. Para rotar, pide que se revoque la key actual y solicita una
+nueva. Si puedes, planifica un solapamiento corto y despliega la key nueva antes de que se
+revoque la anterior.
+
+## Seguimiento de uso
+
+Cada key registra su uso a medida que llegan las peticiones. Junto con el tope diario, eso es
+lo que se mide — consulta [Límites de peticiones](/reference/rate-limits) para las cifras y la
+forma de la respuesta `429`.
+
+:::tip Desarrollar sin gastar cuota
+Usa una key `bql_test_` en local. Producción rechaza las keys de entorno de pruebas, así que
+una key copiada de un `.env` de desarrollo no puede gastar tu cuota real sin que te enteres.
+:::

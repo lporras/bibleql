@@ -1,0 +1,71 @@
+---
+id: quickstart
+title: Quickstart
+sidebar_position: 2
+description: Get an API key and run your first BibleQL query in a couple of minutes.
+---
+
+import ApiExample from "@site/src/components/ApiExample";
+import { API_KEY_REQUEST_URL, GRAPHQL_ENDPOINT, PLAYGROUND_URL } from "@site/src/constants";
+
+# Quickstart
+
+## 1. Get an API key
+
+Request one from the <a href={API_KEY_REQUEST_URL}>API key request form</a>. Requests are
+reviewed by hand, and you will get an email once yours is approved.
+
+Keys are prefixed by environment: `bql_live_` for production and `bql_test_` for
+development. A key only works in the environment it was issued for.
+
+## 2. Put it in your environment
+
+Never paste a key into source control.
+
+```bash
+export BIBLEQL_API_KEY="bql_live_your_key_here"
+```
+
+## 3. Make a request
+
+<ApiExample op="passage" />
+
+You should get back:
+
+```json
+{
+  "data": {
+    "passage": {
+      "reference": "John 3:16",
+      "text": "For God so loved the world, that he gave his one and only Son, that whoever believes in him should not perish, but have eternal life.",
+      "translationName": "World English Bible"
+    }
+  }
+}
+```
+
+## 4. Understand what came back
+
+GraphQL returns exactly the fields you asked for, wrapped in a top-level `data` object.
+
+- `reference` is the parsed reference, normalized.
+- `text` is every matched verse joined with newlines — handy for display.
+- `translationName` is the human-readable translation name.
+
+Had you asked for `verses { verse text }` instead of `text`, you would have received each
+verse separately. Nothing is returned unless you name it.
+
+Errors arrive in a top-level `errors` array rather than as an HTTP error status — see
+[Errors](/reference/errors).
+
+## Next steps
+
+- Explore interactively in the <a href={PLAYGROUND_URL}>playground</a>
+- Learn the [reference formats](/guides/references) — ranges, whole chapters, multi-ranges
+- Browse the [available translations](/guides/translations)
+- Install an [SDK](/sdks) if you would rather not write GraphQL by hand
+
+:::tip Endpoint
+Every example on this site posts to <code>{GRAPHQL_ENDPOINT}</code>. There is no `GET`
+variant.
+:::

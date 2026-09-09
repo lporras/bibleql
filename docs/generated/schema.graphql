@@ -1,0 +1,696 @@
+"""
+A canonical book of the Bible, independent of any translation. See LocalizedBook for per-translation names.
+"""
+type Book {
+  """
+  Canonical three-letter book id (e.g. 'GEN', 'MAT'). Use this wherever a query takes a book argument.
+  """
+  bookId: String!
+
+  """
+  Relay global object id
+  """
+  id: ID!
+
+  """
+  Canonical English book name (e.g. 'Genesis')
+  """
+  name: String!
+
+  """
+  Canonical ordering position, 1 (Genesis) through 66 (Revelation)
+  """
+  position: Int!
+
+  """
+  Either 'OT' or 'NT'. Note this is a plain String, not the Testament enum used by concordance.
+  """
+  testament: String!
+}
+
+"""
+Occurrence count for one book in a concordance result
+"""
+type BookCount {
+  """
+  Canonical three-letter book id (e.g. 'PSA')
+  """
+  bookId: String!
+
+  """
+  Localized for the queried translation
+  """
+  bookName: String!
+
+  """
+  Number of verses in this book containing the word
+  """
+  count: Int!
+}
+
+"""
+One chapter of a book in a given translation
+"""
+type Chapter {
+  """
+  Chapter number
+  """
+  number: Int!
+
+  """
+  Number of verses in this chapter
+  """
+  verseCount: Int!
+
+  """
+  All verses in this chapter
+  """
+  verses: [Verse!]!
+}
+
+"""
+A page of concordance occurrences plus translation-wide aggregates for the word
+"""
+type ConcordanceConnection {
+  """
+  This page of occurrences, in canonical order (Genesis → Revelation, then chapter, then verse). Never ranked by relevance.
+  """
+  edges: [ConcordanceEdge!]!
+
+  """
+  Aggregate counts for the word across the whole translation — unaffected by paging or by the book/testament filters
+  """
+  entry: ConcordanceEntry!
+
+  """
+  Cursor and flag for fetching the next page
+  """
+  pageInfo: ConcordancePageInfo!
+
+  """
+  Total occurrences matching the current filters, across all pages
+  """
+  totalCount: Int!
+}
+
+"""
+One occurrence together with its pagination cursor
+"""
+type ConcordanceEdge {
+  """
+  Opaque cursor for this position. Pass it as the concordance `after` argument to continue from here.
+  """
+  cursor: String!
+
+  """
+  The occurrence itself
+  """
+  node: ConcordanceOccurrence!
+}
+
+"""
+Aggregate information about a word across a translation
+"""
+type ConcordanceEntry {
+  """
+  Normalized stem from the translation's text search dictionary. May look
+  garbled (e.g. 'misericordi') — use surfaceForms for display.
+  """
+  lemma: String!
+
+  """
+  Per-book distribution in canonical order. Books with no occurrences are omitted.
+  """
+  occurrencesByBook: [BookCount!]!
+
+  """
+  Occurrence totals split across the Old and New Testaments
+  """
+  occurrencesByTestament: TestamentCount!
+
+  """
+  Up to 10 actual word forms found in the text, most frequent first (e.g. amor, amores, amoroso). Sampled, not exhaustive.
+  """
+  surfaceForms: [String!]!
+
+  """
+  Raw token matches; can exceed verseCount if the word repeats within a single verse.
+  """
+  totalOccurrences: Int!
+
+  """
+  Number of distinct verses containing the word
+  """
+  verseCount: Int!
+}
+
+"""
+One entry in a translation's alphabetical word frequency index
+"""
+type ConcordanceIndexEntry {
+  """
+  Normalized stem from the translation's text search dictionary. May look
+  garbled (e.g. 'misericordi') — it is an index key, not a display form.
+  """
+  lemma: String!
+
+  """
+  Total raw token count across the translation
+  """
+  totalOccurrences: Int!
+
+  """
+  Distinct verses containing this word
+  """
+  verseCount: Int!
+}
+
+"""
+A single occurrence of a word in one verse, with surrounding context
+"""
+type ConcordanceOccurrence {
+  """
+  Keyword-in-context snippet. Contains <mark> HTML tags around the matched term — sanitize before rendering as HTML.
+  """
+  context: String!
+
+  """
+  Null unless the translation has Strong's number tagging. See translation.hasStrongsTagging (Phase 2, always false today).
+  """
+  strongs: StrongsEntry
+
+  """
+  The verse containing the word
+  """
+  verse: Verse!
+}
+
+"""
+Paging state for a concordance result
+"""
+type ConcordancePageInfo {
+  """
+  Cursor of the last occurrence on this page. Pass it as `after` to fetch the next page. Null when the page is empty.
+  """
+  endCursor: String
+
+  """
+  True when more occurrences remain beyond this page
+  """
+  hasNextPage: Boolean!
+}
+
+"""
+An ISO 8601-encoded date
+"""
+scalar ISO8601Date @specifiedBy(url: "https://tools.ietf.org/html/rfc3339")
+
+"""
+An ISO 8601-encoded datetime
+"""
+scalar ISO8601DateTime @specifiedBy(url: "https://tools.ietf.org/html/rfc3339")
+
+"""
+A language, with the translations available in it
+"""
+type Language {
+  """
+  Language code (e.g. 'eng', 'spa')
+  """
+  code: String!
+
+  """
+  Number of translations available in this language
+  """
+  translationCount: Int!
+
+  """
+  All translations in this language
+  """
+  translations: [Translation!]!
+}
+
+"""
+A book as it appears in one specific translation, with its localized name and chapter structure
+"""
+type LocalizedBook {
+  """
+  Unique book identifier (e.g. 'MAT', 'GEN')
+  """
+  bookId: String!
+
+  """
+  Number of chapters in this book for the translation
+  """
+  chapterCount: Int!
+
+  """
+  All chapters in this book
+  """
+  chapters: [Chapter!]!
+
+  """
+  Localized book name for the translation
+  """
+  name: String!
+
+  """
+  Canonical order position (1-66)
+  """
+  position: Int!
+
+  """
+  Testament: 'OT' or 'NT'
+  """
+  testament: String!
+}
+
+"""
+BibleQL is a read-only API. No mutations are supported; this root exists only as scaffolding.
+"""
+type Mutation {
+  """
+  Scaffolding placeholder, not part of the supported API. Always returns "Hello
+  World" and will be removed — do not depend on it.
+  """
+  testField: String!
+}
+
+"""
+A resolved range of verses, returned by the passage and verseOfTheDay queries
+"""
+type Passage {
+  """
+  The reference in normalized form. Localized input keeps its own book name (e.g. 'Juan 3:16').
+  """
+  reference: String!
+
+  """
+  All verse texts joined with newlines — convenient for display when you do not need each verse separately
+  """
+  text: String!
+
+  """
+  Identifier of the translation this passage came from (e.g. 'eng-web')
+  """
+  translationId: String!
+
+  """
+  Full name of the translation (e.g. 'World English Bible')
+  """
+  translationName: String!
+
+  """
+  Licensing or attribution note for the translation (e.g. 'Public Domain', 'CC BY 4.0')
+  """
+  translationNote: String
+
+  """
+  Every verse the reference resolved to, in canonical order
+  """
+  verses: [Verse!]!
+}
+
+"""
+The BibleQL read API. Every field is a query entry point; all requests require an API key.
+"""
+type Query {
+  """
+  Get the structural hierarchy of books and chapters for a translation
+  """
+  bibleIndex(
+    """
+    Translation identifier (e.g. 'eng-web', 'spa-bes')
+    """
+    translation: String = "eng-web"
+  ): [LocalizedBook!]!
+
+  """
+  List all canonical books in order
+  """
+  books: [Book!]!
+
+  """
+  Get all verses in a chapter
+  """
+  chapter(
+    """
+    Book ID (e.g. 'MAT') or localized name (e.g. 'Mateo')
+    """
+    book: String!
+
+    """
+    Chapter number, starting at 1
+    """
+    chapter: Int!
+
+    """
+    Translation identifier (e.g. 'eng-web', 'spa-rv1909')
+    """
+    translation: String = "eng-web"
+  ): [Verse!]!
+
+  """
+  Exhaustive, canonically-ordered occurrences of a word, with per-book/testament
+  aggregates and KWIC context. Unlike `search`, this never ranks or truncates by relevance.
+  """
+  concordance(
+    """
+    Opaque cursor from a previous page's pageInfo.endCursor
+    """
+    after: String
+
+    """
+    Canonical book id (e.g. 'PSA') or localized book name (e.g. 'Salmos')
+    """
+    book: String
+
+    """
+    Max occurrences per page. Clamped to 1..100.
+    """
+    first: Int = 25
+
+    """
+    Restrict to one testament. Combines with `book` as an AND filter.
+    """
+    testament: Testament
+
+    """
+    Translation identifier (e.g. 'spa-rv1909')
+    """
+    translation: String!
+
+    """
+    Word to look up (matched via the translation's stemming dictionary when available; see hasStemming)
+    """
+    word: String!
+  ): ConcordanceConnection!
+
+  """
+  Alphabetical word frequency index for a translation.
+  """
+  concordanceIndex(
+    """
+    Max entries to return. Clamped to 1..200.
+    """
+    first: Int = 50
+
+    """
+    Skip words occurring fewer times than this across the translation
+    """
+    minOccurrences: Int = 1
+
+    """
+    Only words starting with this prefix (case-insensitive)
+    """
+    prefix: String
+
+    """
+    Translation identifier. Must already be indexed — see rake concordance:index.
+    """
+    translation: String!
+  ): [ConcordanceIndexEntry!]!
+
+  """
+  List all languages that have at least one translation
+  """
+  languages: [Language!]!
+
+  """
+  Look up a Bible passage by reference
+  """
+  passage(
+    """
+    Bible reference (e.g. 'John 3:16', 'Mateo 28:18-20')
+    """
+    reference: String!
+
+    """
+    Translation identifier (e.g. 'eng-web', 'spa-bes')
+    """
+    translation: String = "eng-web"
+  ): Passage!
+
+  """
+  Get a random Bible verse
+  """
+  randomVerse(
+    """
+    Comma-separated list of book IDs or localized names (e.g. 'GEN,EXO' or 'Mateo,Juan')
+    """
+    books: String
+
+    """
+    Filter by testament: 'OT' (Old Testament) or 'NT' (New Testament)
+    """
+    testament: String
+
+    """
+    Translation identifier (e.g. 'eng-web', 'spa-bes')
+    """
+    translation: String = "eng-web"
+  ): Verse!
+
+  """
+  Search verses by text content
+  """
+  search(
+    """
+    Max results to return. Capped at 100.
+    """
+    limit: Int = 25
+
+    """
+    Text to match. Case-insensitive substring match — no stemming, so 'love'
+    will not match 'loved'. Use concordance for stemmed, exhaustive lookup.
+    """
+    query: String!
+
+    """
+    Translation identifier (e.g. 'eng-web', 'spa-rv1909')
+    """
+    translation: String = "eng-web"
+  ): [Verse!]!
+
+  """
+  Search verses by semantic meaning using AI embeddings
+  """
+  semanticSearch(
+    """
+    Max number of results (max 50)
+    """
+    limit: Int = 10
+
+    """
+    Natural language search query (e.g. 'fe y esperanza', 'perdón')
+    """
+    query: String!
+
+    """
+    Translation identifier (currently only spa-rv1909 has embeddings)
+    """
+    translation: String = "spa-rv1909"
+  ): [SemanticSearchResult!]!
+
+  """
+  Get a single translation by identifier
+  """
+  translation(
+    """
+    Translation identifier (e.g. 'eng-web', 'spa-bes')
+    """
+    identifier: String!
+  ): Translation!
+
+  """
+  List all available Bible translations
+  """
+  translations: [Translation!]!
+
+  """
+  Get a single verse
+  """
+  verse(
+    """
+    Book ID or localized name
+    """
+    book: String!
+
+    """
+    Chapter number, starting at 1
+    """
+    chapter: Int!
+
+    """
+    Translation identifier (e.g. 'eng-web', 'spa-rv1909')
+    """
+    translation: String = "eng-web"
+
+    """
+    Verse number within the chapter, starting at 1
+    """
+    verse: Int!
+  ): Verse!
+
+  """
+  Get the verse of the day for a given date
+  """
+  verseOfTheDay(
+    """
+    Date for the verse of the day (defaults to today, format: YYYY-MM-DD)
+    """
+    date: ISO8601Date
+
+    """
+    Translation identifier (e.g. 'eng-web', 'spa-bes')
+    """
+    translation: String = "eng-web"
+  ): Passage!
+}
+
+"""
+A verse matched by meaning rather than by wording, with its similarity score
+"""
+type SemanticSearchResult {
+  """
+  Cosine similarity to the query, from 0.0 to 1.0 — higher is closer in meaning.
+  Results are ordered by this value, descending.
+  """
+  similarity: Float!
+
+  """
+  The matched verse
+  """
+  verse: Verse!
+}
+
+"""
+Placeholder for Phase 2 Strong's number tagging — not yet populated
+"""
+type StrongsEntry {
+  """
+  e.g. H2617, G26 (Phase 2)
+  """
+  number: String!
+}
+
+"""
+Which half of the canon: Old or New Testament
+"""
+enum Testament {
+  """
+  New Testament (Matthew–Revelation)
+  """
+  NEW
+
+  """
+  Old Testament (Genesis–Malachi)
+  """
+  OLD
+}
+
+"""
+Occurrence counts split across the two testaments
+"""
+type TestamentCount {
+  """
+  Verses containing the word in the New Testament
+  """
+  new: Int!
+
+  """
+  Verses containing the word in the Old Testament
+  """
+  old: Int!
+}
+
+"""
+A Bible translation available through the API
+"""
+type Translation {
+  """
+  Common abbreviation (e.g. 'WEB', 'KJV')
+  """
+  abbrev: String
+
+  """
+  All books available in this translation with localized names
+  """
+  books: [LocalizedBook!]!
+
+  """
+  When the concordance index was last built. Null means concordance queries will error until `rake concordance:index` runs.
+  """
+  concordanceIndexedAt: ISO8601DateTime
+
+  """
+  Whether concordance queries apply linguistic stemming for this translation. When false, only exact word forms match.
+  """
+  hasStemming: Boolean!
+
+  """
+  Whether verses in this translation carry Strong's number annotations (Phase 2 — always false today)
+  """
+  hasStrongsTagging: Boolean!
+
+  """
+  Relay global object id
+  """
+  id: ID!
+
+  """
+  Stable identifier used by every query's translation argument (e.g. 'eng-web', 'spa-rv1909')
+  """
+  identifier: String!
+
+  """
+  Language code (e.g. 'eng', 'spa')
+  """
+  language: String!
+
+  """
+  Human-readable language (e.g. 'English (UK)')
+  """
+  languageName: String
+
+  """
+  Full translation name (e.g. 'World English Bible')
+  """
+  name: String!
+
+  """
+  Licensing or attribution note (e.g. 'Public Domain', 'CC BY 4.0')
+  """
+  note: String
+}
+
+"""
+A single verse in one translation
+"""
+type Verse {
+  """
+  Canonical three-letter book id (e.g. 'JHN', 'GEN'). Stable across every translation.
+  """
+  bookId: String!
+
+  """
+  Book name localized to this translation (e.g. 'Juan' for Spanish). Falls back
+  to the canonical English name when the translation has no localized name.
+  """
+  bookName: String!
+
+  """
+  Chapter number, starting at 1
+  """
+  chapter: Int!
+
+  """
+  The verse text as it appears in this translation
+  """
+  text: String!
+
+  """
+  Verse number within the chapter, starting at 1
+  """
+  verse: Int!
+}

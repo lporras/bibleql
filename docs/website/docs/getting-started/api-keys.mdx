@@ -1,0 +1,63 @@
+---
+id: api-keys
+title: API Keys
+sidebar_position: 4
+description: Requesting, rotating and managing BibleQL API keys.
+---
+
+import { API_KEY_REQUEST_URL } from "@site/src/constants";
+
+# API Keys
+
+[Authentication](/getting-started/authentication) covers how to *send* a key. This page covers
+the lifecycle around it.
+
+## Requesting
+
+Submit the <a href={API_KEY_REQUEST_URL}>request form</a> with your name, email and intended
+environment. A request starts as **pending** and moves to **approved** or **rejected** after a
+human looks at it. You are emailed either way.
+
+Useful things to include in your description: what you are building, roughly how many requests
+you expect, and which translations you need. It makes approval quicker.
+
+## Anatomy of a key
+
+```text
+bql_live_a1b2c3d4e5f6...
+└──┬───┘
+   └─ environment prefix
+```
+
+Only the prefix is meaningful to you. Server-side, keys are stored as bcrypt digests — the
+full token cannot be recovered from the database, which is why a lost key must be replaced
+rather than looked up.
+
+The first 12 characters also act as the identifier for [per-key rate
+limiting](/reference/rate-limits), so all your requests share one quota regardless of source
+IP.
+
+## One key per email per environment
+
+This is enforced by a uniqueness constraint. To run separate quotas for separate projects, use
+separate email addresses.
+
+You can hold a `bql_live_` and a `bql_test_` key on the same address at once — that is the
+intended setup, not a workaround.
+
+## Rotation
+
+There is no self-service rotation. To rotate, ask for the current key to be revoked and
+request a new one. Plan a short overlap if you can, and deploy the new key before the old one
+is revoked.
+
+## Usage tracking
+
+Each key records its usage as requests come in. Combined with the daily cap, that is what you
+are measured against — see [Rate Limits](/reference/rate-limits) for the numbers and the
+`429` response shape.
+
+:::tip Development without burning quota
+Use a `bql_test_` key locally. Test-environment keys are refused by production, so a key
+copied out of a development `.env` cannot quietly spend your live allowance.
+:::

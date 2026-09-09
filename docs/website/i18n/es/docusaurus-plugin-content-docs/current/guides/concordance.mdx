@@ -1,0 +1,152 @@
+---
+id: concordance
+title: Concordancia
+sidebar_position: 7
+description: Estudio de palabras exhaustivo y en orden canónico, con distribución por libro y fragmentos de contexto.
+---
+
+import ApiExample from "@site/src/components/ApiExample";
+
+# Concordancia
+
+Una concordancia responde a «¿dónde aparece esta palabra, en todas partes, en orden?». Es una
+pregunta distinta a la de una búsqueda, y `concordance` está hecha para responderla
+exactamente:
+
+- **Exhaustiva** — todas las apariciones, accesibles mediante paginación. No se descarta nada.
+- **En orden canónico** — Génesis → Apocalipsis, luego capítulo, luego versículo. Nunca
+  ordenada por relevancia.
+- **Agregada** — los totales por libro y por testamento llegan junto a la página.
+- **Con contexto** — cada aparición incluye un fragmento de palabra clave en contexto.
+
+:::info Requiere un índice
+Las queries de concordancia necesitan que la traducción esté indexada. Revisa
+`concordanceIndexedAt` en la traducción — si es `null`, la query devuelve un error indicando
+qué tarea rake ejecutar. Consulta
+[Traducciones](/guides/translations#el-soporte-de-funciones-varía).
+:::
+
+## Una query completa
+
+<ApiExample op="concordance" />
+
+## Leer la respuesta
+
+Tres partes, cada una responde algo distinto.
+
+### `entry` — agregados de toda la traducción
+
+```graphql
+entry {
+  lemma
+  surfaceForms
+  totalOccurrences
+  verseCount
+  occurrencesByBook { bookId bookName count }
+  occurrencesByTestament { old new }
+}
+```
+
+Estos cubren **toda la traducción** y no se ven afectados por la paginación. Tampoco los
+afectan tus filtros `book` y `testament`: `entry` siempre describe la palabra de forma global,
+que es justo lo que lo hace útil como encabezado sobre unos resultados filtrados.
+
+- `lemma` es la raíz normalizada, y puede verse extraña (`misericordi`). Es una clave de
+  índice, no algo para mostrar al usuario.
+- `surfaceForms` es lo que se muestra: hasta 10 formas reales encontradas en el texto, de más a
+  menos frecuente. Es una muestra, no una lista exhaustiva.
+- `totalOccurrences` cuenta tokens; `verseCount` cuenta versículos. El primero puede superar al
+  segundo cuando una palabra se repite dentro de un mismo versículo.
+
+### `edges` — esta página de apariciones
+
+```graphql
+edges {
+  cursor
+  node {
+    context
+    verse { bookName chapter verse text }
+  }
+}
+```
+
+:::danger `context` contiene HTML
+`context` envuelve el término coincidente en etiquetas `<mark>`. Se genera en el servidor a
+partir del texto del versículo, pero aun así debes sanearlo antes de renderizarlo como HTML;
+nunca lo insertes en el DOM sin escapar por costumbre.
+:::
+
+### `pageInfo` — dónde estás
+
+```graphql
+pageInfo { hasNextPage endCursor }
+```
+
+## Paginación
+
+Pasa `endCursor` de vuelta como `after`:
+
+```graphql
+query {
+  concordance(translation: "spa-rv1909", word: "amor", first: 25, after: "UFNBOjIzOjE=") {
+    edges { cursor node { verse { bookName chapter verse } } }
+    pageInfo { hasNextPage endCursor }
+  }
+}
+```
+
+Los cursores son opacos: no los decodifiques ni los construyas. `first` es 25 por defecto y se
+limita al rango 1–100.
+
+Sigue paginando mientras `hasNextPage` sea verdadero. Como el orden es canónico y estable, un
+cursor sigue siendo válido entre peticiones mientras la traducción no se haya reindexado.
+
+## Filtros
+
+| Argumento | Efecto |
+|---|---|
+| `book` | Id canónico (`PSA`) o nombre localizado (`Salmos`) |
+| `testament` | `OLD` o `NEW` |
+
+Los dos **se combinan con AND** — `book: "PSA", testament: OLD` es un filtro válido y no
+contradictorio. Esto difiere de `randomVerse`, donde `books` anula `testament`; consulta
+[Comportamiento de la API](/reference/api-behavior).
+
+<ApiExample op="concordanceByBook" />
+
+Fíjate en dos cosas de esa respuesta. `totalCount` baja de 398 a 164: el total solo de Salmos.
+Y `book` aceptó `"Salmos"`, el nombre localizado, en lugar del canónico `PSA`; ambos funcionan.
+
+Los filtros restringen `edges` y `totalCount`, pero **no** `entry`, que sigue siendo de toda la
+traducción. Eso es intencional: permite mostrar «164 de 398 apariciones están en Salmos» con
+una sola petición.
+
+## Stemming
+
+La coincidencia pasa por el diccionario de búsqueda de texto de PostgreSQL de la traducción,
+así que `amor` encuentra `amores` y `amoroso`. Que eso ocurra depende de la traducción:
+
+- `hasStemming: true` — hay stemming lingüístico disponible para ese idioma
+- `hasStemming: false` — solo coinciden las formas exactas
+
+Revísalo antes de prometer a los usuarios coincidencia flexible de palabras.
+
+## Presupuesto de complejidad
+
+`concordance` tiene un coste de complejidad proporcional a `first`, frente al presupuesto global
+del esquema de 300. Pedir `first: 100` junto con selecciones muy anidadas de `verse` puede
+superarlo. Si te topas con un error de complejidad, reduce `first` o selecciona menos campos por
+aparición.
+
+## El índice de palabras
+
+Para explorar qué palabras existen en lugar de buscar una, usa `concordanceIndex`:
+
+<ApiExample op="concordanceIndex" />
+
+Devuelve una lista alfabética de frecuencias, útil para construir una página de estudio de
+palabras o un autocompletado. `minOccurrences` descarta palabras raras; `first` se limita al
+rango 1–200.
+
+Ten en cuenta que estas entradas son valores de `lemma`, con la misma salvedad de antes: son
+raíces, no formas para mostrar.

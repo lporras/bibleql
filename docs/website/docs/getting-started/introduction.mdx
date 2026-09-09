@@ -1,0 +1,67 @@
+---
+id: introduction
+title: Introduction
+sidebar_position: 1
+description: What BibleQL is, what it is not, and the concepts you need before your first query.
+---
+
+import { GRAPHQL_ENDPOINT } from "@site/src/constants";
+
+# Introduction
+
+BibleQL is a read-only GraphQL API for Bible text. You send a query describing exactly the
+verses and fields you want; you get back JSON with nothing extra.
+
+There is a single endpoint:
+
+<pre><code>POST {GRAPHQL_ENDPOINT}</code></pre>
+
+Only `POST` is accepted, and every request needs an API key. There are no mutations — BibleQL
+never modifies anything.
+
+## Four concepts
+
+Almost every query is built out of these.
+
+### Translation
+
+A specific edition of the Bible, addressed by a **translation identifier** such as `eng-web`
+or `spa-rv1909`. The identifier is what you pass to the `translation` argument, and it is
+stable — it will not change under you.
+
+### Language
+
+A translation belongs to a language, identified by a three-letter code (`eng`, `spa`, `deu`).
+One language usually has several translations. The `languages` query lists them with counts.
+
+Note that the language of a *translation* is unrelated to the language of *this
+documentation* — you can read the Spanish docs while querying an English Bible.
+
+### Book
+
+Books have a canonical three-letter id — `GEN`, `JHN`, `MAT` — that is identical across every
+translation. Wherever a query takes a `book` argument, that id always works.
+
+### Reference
+
+A human-readable pointer to a passage: `John 3:16`, `Genesis 1`, `Matthew 25:31-33,46`. BibleQL
+parses these, including in the translation's own language, so `Juan 3:16` resolves against a
+Spanish translation. See [Bible References](/guides/references).
+
+## What BibleQL does not do
+
+Being explicit about the boundaries saves time:
+
+- **No mutations.** It is a reading API. The schema has a `Mutation` root, but it holds only
+  leftover scaffolding — see [API Behavior](/reference/api-behavior).
+- **No user accounts, highlights, or notes.** There is nothing per-user to store.
+- **No commentary, cross-references, or study notes.** Verse text and structure only.
+- **No audio.**
+- **Not every translation supports every feature.** Semantic search needs embeddings and
+  concordance needs an index; both are per-translation. Each guide says what it requires.
+
+## Where to go next
+
+Get a key and make a request in [Quickstart](/getting-started/quickstart), or read
+[Authentication](/getting-started/authentication) first if you want to understand the key
+model before using it.

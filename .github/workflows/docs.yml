@@ -1,0 +1,69 @@
+name: Docs
+
+on:
+  pull_request:
+    paths:
+      - "docs/**"
+      - "app/graphql/**"
+      - ".github/workflows/docs.yml"
+  push:
+    branches: [ main ]
+    paths:
+      - "docs/**"
+      - "app/graphql/**"
+      - ".github/workflows/docs.yml"
+  # Allow a manual deploy without touching the docs (e.g. the first run, once
+  # GitHub Pages has been enabled in repository settings).
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Never let two deploys race; queue them instead of cancelling, so a merged PR
+# always ends up published.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: docs/website
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v4
+        with:
+          # Matches .tool-versions. The floor is 22.12, required by
+          # @graphql-markdown/docusaurus and enforced by package.json engines.
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: docs/website/package-lock.json
+
+      - run: npm ci
+
+      # Generates the API reference from the committed SDL, then builds every
+      # locale. No Ruby, no database and no network access needed: `rake
+      # docs:schema` already wrote docs/generated/schema.graphql.
+      # onBrokenLinks/onBrokenAnchors are "throw", so a dead link fails here.
+      - run: npm run build
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs/website/build
+
+  deploy:
+    # Build on every PR for validation; publish only from main.
+    if: github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v4

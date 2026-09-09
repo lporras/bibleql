@@ -2,6 +2,8 @@
 
 module Types
   class LocalizedBookType < Types::BaseObject
+    description "A book as it appears in one specific translation, with its localized name and chapter structure"
+
     field :book_id, String, null: false, description: "Unique book identifier (e.g. 'MAT', 'GEN')"
     field :name, String, null: false, description: "Localized book name for the translation"
     field :testament, String, null: false, description: "Testament: 'OT' or 'NT'"

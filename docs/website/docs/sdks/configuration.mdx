@@ -1,0 +1,228 @@
+---
+id: configuration
+title: Configuring the SDKs
+sidebar_position: 2
+description: Where to initialize the BibleQL clients, how to supply credentials, and the settings worth setting explicitly.
+---
+
+import Tabs from "@theme/Tabs";
+import TabItem from "@theme/TabItem";
+import { GRAPHQL_ENDPOINT } from "@site/src/constants";
+
+# Configuring the SDKs
+
+Both clients can be configured globally once, or per instance. This page covers where that
+initialization belongs and which options you should set rather than inherit.
+
+## Settings
+
+Both SDKs accept the same four things, under language-appropriate names.
+
+| Setting | Ruby | Node.js | Default |
+|---|---|---|---|
+| API key | `api_key` | `apiKey` | none — required |
+| Endpoint | `api_url` | `apiUrl` | a Render-hosted URL, **not** bibleql.org |
+| Fallback translation | `default_translation` | `defaultTranslation` | `eng-web` |
+| Timeout | `timeout` (seconds) | `timeout` (milliseconds) | 30s / 30000ms |
+
+Note the timeout unit differs between the two.
+
+:::warning Always set the endpoint explicitly
+Both SDKs currently default `api_url` / `apiUrl` to a Render-hosted hostname rather than
+<code>{GRAPHQL_ENDPOINT}</code>. If you leave it unset, your traffic goes somewhere other than
+the canonical endpoint. Pin it in your initializer.
+:::
+
+## Where to initialize
+
+<Tabs groupId="sdk">
+<TabItem value="ruby" label="Ruby" default>
+
+In a Rails app, configure once in an initializer:
+
+```ruby title="config/initializers/bibleql.rb"
+require "bibleql"
+
+BibleQL.configure do |config|
+  config.api_key = ENV.fetch("BIBLEQL_API_KEY")
+  config.api_url = "https://bibleql.org/graphql"
+  config.default_translation = "eng-web"
+  config.timeout = 30
+end
+```
+
+Then anywhere in the app:
+
+```ruby
+BibleQL.client.passage("John 3:16")
+```
+
+`ENV.fetch` without a default is deliberate — it fails loudly at boot if the key is missing,
+rather than at the first request in production.
+
+### Using Rails credentials instead
+
+If you keep secrets in `config/credentials.yml.enc` rather than the environment:
+
+```ruby title="config/initializers/bibleql.rb"
+BibleQL.configure do |config|
+  config.api_key = Rails.application.credentials.bibleql!(:api_key)
+  config.api_url = "https://bibleql.org/graphql"
+end
+```
+
+Edit them with `bin/rails credentials:edit`:
+
+```yaml
+bibleql:
+  api_key: bql_live_...
+```
+
+### Per-instance clients
+
+Global configuration is convenient but shared. For a distinct translation, a different
+timeout, or an isolated client in tests, build one directly:
+
+```ruby
+client = BibleQL::Client.new(
+  api_key: ENV.fetch("BIBLEQL_API_KEY"),
+  api_url: "https://bibleql.org/graphql",
+  default_translation: "spa-rv1909"
+)
+```
+
+A per-instance client ignores the global configuration, which makes it the better choice in
+tests — no global state to reset between examples.
+
+### Plain Ruby, no Rails
+
+There is no initializer directory, so configure once at load time, before first use:
+
+```ruby
+require "bibleql"
+
+BibleQL.configure do |config|
+  config.api_key = ENV.fetch("BIBLEQL_API_KEY")
+  config.api_url = "https://bibleql.org/graphql"
+end
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+Export a single configured client from one module and import it everywhere. Creating a new
+client per request works, but it is needless object churn.
+
+```typescript title="lib/bibleql.ts"
+import { BibleQLClient } from "bibleql-js";
+
+const apiKey = process.env.BIBLEQL_API_KEY;
+
+if (!apiKey) {
+  // Fail at startup rather than on the first request.
+  throw new Error("BIBLEQL_API_KEY is not set");
+}
+
+export const bibleql = new BibleQLClient({
+  apiKey,
+  apiUrl: "https://bibleql.org/graphql",
+  defaultTranslation: "eng-web",
+  timeout: 30_000,
+});
+```
+
+```typescript
+import { bibleql } from "./lib/bibleql";
+
+const passage = await bibleql.passage("John 3:16");
+```
+
+The explicit `apiKey` check also narrows the type from `string | undefined` to `string`, which
+is why the module above needs no non-null assertion.
+
+### Global defaults
+
+The package also supports process-wide configuration:
+
+```typescript
+import { configure } from "bibleql-js";
+
+configure({
+  apiKey: process.env.BIBLEQL_API_KEY!,
+  apiUrl: "https://bibleql.org/graphql",
+  defaultTranslation: "eng-web",
+});
+```
+
+Prefer the exported-module approach for application code — it keeps the dependency explicit
+and is far easier to substitute in tests. `configure()` is handy in a script or a REPL.
+
+### Next.js and other frameworks
+
+Import the client only from server-side code — a route handler, a server component, a server
+action, `getServerSideProps`. If a module that imports `bibleql-js` is reachable from a client
+component, your key ends up in the browser bundle.
+
+Keep the key in `.env.local` as `BIBLEQL_API_KEY`, **never** `NEXT_PUBLIC_BIBLEQL_API_KEY` —
+the `NEXT_PUBLIC_` prefix publishes it by design.
+
+### Serverless and edge
+
+Cold starts re-run module initialization, so a module-level client is created once per instance
+and reused across invocations on that instance — which is what you want. Just make sure the key
+comes from the platform's secret store, not a bundled file.
+
+</TabItem>
+</Tabs>
+
+## Choosing a default translation
+
+`default_translation` / `defaultTranslation` only applies when a call omits the translation. It
+does not restrict anything — any call can pass a different one.
+
+Set it to whatever your application shows most often. If you serve several languages, prefer
+passing `translation` explicitly at each call site so the behaviour does not depend on
+configuration read elsewhere.
+
+## Timeouts
+
+The defaults (30 seconds) are generous for most queries. Two things worth knowing:
+
+- [`semanticSearch`](/guides/semantic-search) calls an external embedding service and is the
+  slowest query in the API. If you use it behind a user-facing request, a shorter timeout plus
+  a fallback beats a hung page.
+- Large [`concordance`](/guides/concordance) pages take longer than a verse lookup. Reduce
+  `first` before you raise the timeout.
+
+## Verifying your setup
+
+A cheap query that touches no Bible text:
+
+<Tabs groupId="sdk">
+<TabItem value="ruby" label="Ruby" default>
+
+```ruby
+translations = BibleQL.client.translations
+puts "#{translations.size} translations available"
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```typescript
+const translations = await bibleql.translations();
+console.log(`${translations.length} translations available`);
+```
+
+</TabItem>
+</Tabs>
+
+If the key is wrong you get an authentication error immediately — see
+[Errors](/reference/errors) for what each failure looks like, and
+[SDKs](/sdks) for the exception class each one maps to.
+
+:::tip Use a test key locally
+Point development at a `bql_test_` key. Production refuses test-environment keys, so a key
+leaked from a laptop or a CI log cannot spend your live quota. See
+[API Keys](/getting-started/api-keys).
+:::

@@ -1,0 +1,60 @@
+---
+slug: /
+title: BibleQL
+description: A GraphQL API for querying Bible verses and passages across dozens of translations, with localized book names.
+hide_table_of_contents: true
+---
+
+import { PLAYGROUND_URL } from "@site/src/constants";
+
+# BibleQL
+
+A GraphQL API for reading the Bible. One endpoint, dozens of translations, and references that
+work in the language of the translation — `John 3:16` or `Juan 3:16`, whichever fits.
+
+```graphql
+query {
+  passage(translation: "eng-web", reference: "John 3:16") {
+    reference
+    text
+    translationName
+  }
+}
+```
+
+## Start here
+
+| | |
+|---|---|
+| **[Quickstart](/getting-started/quickstart)** | Your first request in about two minutes |
+| **[Authentication](/getting-started/authentication)** | API keys, headers, and how to keep them safe |
+| **[API Reference](/api-reference)** | Every query, type and enum, generated from the schema |
+| **[SDKs](/sdks)** | Official clients: [`bibleql-ruby`](https://rubygems.org/gems/bibleql-ruby) and [`bibleql-js`](https://www.npmjs.com/package/bibleql-js) |
+
+## What it can do
+
+- **Passage lookup** — single verses, ranges, multi-ranges, whole chapters
+  ([guide](/guides/references))
+- **Localized book names** — query Spanish translations with Spanish book names
+  ([guide](/guides/localized-book-names))
+- **Text search** — fast substring matching across a translation ([guide](/guides/search))
+- **Semantic search** — find verses by meaning using embeddings
+  ([guide](/guides/semantic-search))
+- **Concordance** — exhaustive, canonically ordered word study with keyword-in-context
+  snippets ([guide](/guides/concordance))
+- **Verse of the day** — a curated daily verse in any translation
+  ([guide](/guides/verse-of-the-day))
+- **Structure discovery** — books, chapters and verse counts per translation
+  ([guide](/guides/bible-index))
+
+## Try it without writing any code
+
+The <a href={PLAYGROUND_URL}>interactive playground</a> runs against the live API and includes a
+headers panel for your key. It is the fastest way to explore a query before wiring it into
+anything.
+
+:::note On translations and licensing
+BibleQL serves public domain and freely licensed translations. Each one carries its own
+license in the `note` field — always check it before redistributing text. See
+[Bible Translations](/guides/translations).
+:::

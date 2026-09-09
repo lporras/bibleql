@@ -65,6 +65,47 @@ jobs:
       - name: Lint code for consistent style
         run: bin/rubocop -f github
 
+  # The published API reference at docs.bibleql.org is generated from
+  # docs/generated/schema.graphql, which is committed. This job fails a PR that
+  # changes app/graphql/** without regenerating it, so the docs can never
+  # describe a schema that isn't deployed.
+  #
+  # BibleqlSchema.to_definition is static printing: no database service, no
+  # submodule checkout and no master key required.
+  schema:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          bundler-cache: true
+
+      - name: Check the SDL is committed and tracked
+        run: |
+          if ! git ls-files --error-unmatch docs/generated/schema.graphql > /dev/null 2>&1; then
+            echo "::error file=docs/generated/schema.graphql::The GraphQL SDL is not tracked by git. Run 'bundle exec rake docs:schema' and commit the result — the docs build reads it from the repository."
+            exit 1
+          fi
+
+      - name: Export the GraphQL schema
+        run: bundle exec rake docs:schema
+
+      # `git diff --exit-code` returns 0 for an untracked file, which would let a
+      # deleted SDL pass silently — hence the tracked check above and
+      # `git status --porcelain` here, which reports modified and untracked alike.
+      - name: Check the committed SDL is up to date
+        run: |
+          if [ -n "$(git status --porcelain docs/generated/schema.graphql)" ]; then
+            echo "::error file=docs/generated/schema.graphql::The committed GraphQL SDL is stale. Run 'bundle exec rake docs:schema' and commit the result."
+            git --no-pager diff -- docs/generated/schema.graphql
+            exit 1
+          fi
+          echo "docs/generated/schema.graphql matches app/graphql/"
+
   test:
     runs-on: ubuntu-latest
 

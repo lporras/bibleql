@@ -1,0 +1,96 @@
+---
+id: first-query
+title: Your First Query
+sidebar_position: 5
+description: How to read and write BibleQL queries, from a single verse to nested structures.
+---
+
+import ApiExample from "@site/src/components/ApiExample";
+
+# Your First Query
+
+If you have not used GraphQL before, this page is the short version: you describe the shape of
+the response you want, and that is the shape you get.
+
+## Ask for one verse
+
+<ApiExample op="verse" />
+
+Note `book: "JHN"`. The canonical three-letter id works in every translation. A localized name
+such as `"Juan"` works too, as long as it matches the translation you are querying.
+
+## Ask for more fields
+
+Fields are free to add — nothing comes back unless you request it, and nothing is hidden if you
+do. Adding `bookId` to the previous query returns it alongside the rest; removing `text` stops
+the verse text being sent at all.
+
+That is the main practical difference from a REST API: response size is your decision, not the
+server's.
+
+## Ask for a whole chapter
+
+<ApiExample op="chapter" />
+
+`chapter` returns a list of verses. Every list field in the schema behaves the same way — you
+select the fields you want on each element.
+
+## Nest through relationships
+
+Types connect to each other, so one request can cross several levels:
+
+```graphql
+query {
+  translation(identifier: "eng-web") {
+    name
+    books {
+      bookId
+      name
+      chapterCount
+    }
+  }
+}
+```
+
+That returns the translation plus every book with its chapter count, in one round trip.
+
+:::warning Nesting has limits
+Queries are capped at depth 15 and complexity 300. A deeply nested query — for example every
+chapter *and* every verse of every book — will be rejected rather than served slowly. Use
+[`bibleIndex`](/guides/bible-index) for structure, then fetch the text you actually need.
+:::
+
+## Use variables instead of string interpolation
+
+Once a query lives in application code, pass values as variables rather than building the
+document with string concatenation:
+
+```graphql
+query GetPassage($translation: String!, $reference: String!) {
+  passage(translation: $translation, reference: $reference) {
+    reference
+    text
+  }
+}
+```
+
+```json
+{
+  "translation": "eng-web",
+  "reference": "John 3:16"
+}
+```
+
+Send them as the `variables` key beside `query` in the POST body. This keeps the document
+static and cacheable, and avoids quoting bugs.
+
+## Name your operations
+
+`query GetPassage(...)` above is a named operation. Names cost nothing and make server logs
+and client tooling far easier to read. Anonymous `query { ... }` is fine for exploration.
+
+## Next
+
+- [Bible References](/guides/references) — everything the `reference` argument accepts
+- [API Reference](/api-reference) — the full schema
+- [SDKs](/sdks) — skip GraphQL entirely and call methods

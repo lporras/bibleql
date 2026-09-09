@@ -1,0 +1,70 @@
+---
+id: introduction
+title: Introducción
+sidebar_position: 1
+description: Qué es BibleQL, qué no es, y los conceptos que necesitas antes de tu primera query.
+---
+
+import { GRAPHQL_ENDPOINT } from "@site/src/constants";
+
+# Introducción
+
+BibleQL es una API GraphQL de solo lectura para texto bíblico. Envías una query que describe
+exactamente los versículos y campos que quieres, y recibes JSON sin nada de más.
+
+Hay un único endpoint:
+
+<pre><code>POST {GRAPHQL_ENDPOINT}</code></pre>
+
+Solo se acepta `POST`, y toda petición necesita una API key. No hay mutations — BibleQL nunca
+modifica nada.
+
+## Cuatro conceptos
+
+Casi toda query se construye con estos.
+
+### Traducción
+
+Una edición concreta de la Biblia, identificada por un **identificador de traducción** como
+`eng-web` o `spa-rv1909`. El identificador es lo que pasas al argumento `translation`, y es
+estable: no va a cambiar.
+
+### Idioma
+
+Una traducción pertenece a un idioma, identificado por un código de tres letras (`eng`, `spa`,
+`deu`). Un idioma normalmente tiene varias traducciones. La query `languages` las lista con sus
+totales.
+
+Ten en cuenta que el idioma de una *traducción* no tiene relación con el idioma de *esta
+documentación*: puedes leer la documentación en español mientras consultas una Biblia en inglés.
+
+### Libro
+
+Los libros tienen un id canónico de tres letras — `GEN`, `JHN`, `MAT` — idéntico en todas las
+traducciones. Donde una query acepte un argumento `book`, ese id siempre funciona.
+
+### Referencia
+
+Un puntero legible a un pasaje: `Juan 3:16`, `Génesis 1`, `Mateo 25:31-33,46`. BibleQL las
+interpreta, incluso en el idioma de la traducción, así que `Juan 3:16` se resuelve contra una
+traducción en español. Consulta [Referencias bíblicas](/guides/references).
+
+## Qué no hace BibleQL
+
+Ser explícito con los límites ahorra tiempo:
+
+- **Sin mutations.** Es una API de lectura. El esquema tiene una raíz `Mutation`, pero solo
+  contiene código de andamiaje sobrante — consulta
+  [Comportamiento de la API](/reference/api-behavior).
+- **Sin cuentas de usuario, resaltados ni notas.** No hay nada por usuario que almacenar.
+- **Sin comentarios, referencias cruzadas ni notas de estudio.** Solo texto y estructura.
+- **Sin audio.**
+- **No todas las traducciones admiten todas las funciones.** La búsqueda semántica necesita
+  embeddings y la concordancia necesita un índice; ambos son por traducción. Cada guía indica
+  lo que requiere.
+
+## Siguiente paso
+
+Consigue una key y haz una petición en [Inicio rápido](/getting-started/quickstart), o lee
+primero [Autenticación](/getting-started/authentication) si prefieres entender el modelo de
+keys antes de usarlo.

@@ -1,0 +1,74 @@
+---
+id: languages
+title: Idiomas
+sidebar_position: 2
+description: Descubrir los idiomas disponibles y las traducciones de cada uno.
+---
+
+import ApiExample from "@site/src/components/ApiExample";
+
+# Idiomas
+
+Cada traducción pertenece a un idioma, identificado por un código de tres letras
+[ISO 639-3](https://iso639-3.sil.org). La query `languages` es el punto de partida cuando
+quieres ofrecer al usuario una elección de idioma antes de una de traducción.
+
+## Listar idiomas
+
+<ApiExample op="languages" />
+
+Cada entrada trae un `code`, un `translationCount` y las propias `translations` si las pides:
+
+```graphql
+query {
+  languages {
+    code
+    translationCount
+    translations {
+      identifier
+      name
+      note
+    }
+  }
+}
+```
+
+Eso suele ser todo lo necesario para llenar un selector de dos pasos idioma → traducción en una
+sola petición.
+
+## Los códigos de idioma no son locales
+
+Una fuente habitual de confusión:
+
+| | Ejemplo | Se usa para |
+|---|---|---|
+| Código de idioma | `spa`, `eng`, `deu` | El campo `language` de una traducción |
+| Identificador de traducción | `spa-rv1909`, `eng-web` | El argumento `translation` |
+| Idioma de la documentación | `es`, `en` | El idioma en que está escrito *este sitio* |
+
+Solo la fila del medio la aceptan los argumentos de las queries. Pasar `spa` donde se espera un
+identificador de traducción devuelve un error de no encontrado.
+
+## Nombres legibles
+
+`code` es un identificador para máquinas, no una etiqueta para mostrar. Para la interfaz, lee
+`languageName` en una traducción:
+
+```graphql
+query {
+  translations {
+    identifier
+    language
+    languageName
+    name
+  }
+}
+```
+
+`languageName` es más específico cuando hace falta: las traducciones en inglés distinguen
+`English`, `English (UK)` y `English (US)` aunque las tres compartan el código `eng`.
+
+:::note Los totales cambian
+`translationCount` refleja lo que está cargado ahora mismo. Consúltalo en lugar de fijar un
+número en el código, que quedará obsoleto a medida que se añadan traducciones.
+:::

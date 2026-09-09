@@ -1,0 +1,72 @@
+---
+id: quickstart
+title: Inicio rápido
+sidebar_position: 2
+description: Consigue una API key y ejecuta tu primera query de BibleQL en un par de minutos.
+---
+
+import ApiExample from "@site/src/components/ApiExample";
+import { API_KEY_REQUEST_URL, GRAPHQL_ENDPOINT, PLAYGROUND_URL } from "@site/src/constants";
+
+# Inicio rápido
+
+## 1. Consigue una API key
+
+Solicítala en el <a href={API_KEY_REQUEST_URL}>formulario de solicitud</a>. Las solicitudes se
+revisan a mano y recibirás un correo cuando la tuya sea aprobada.
+
+Las keys llevan un prefijo según el entorno: `bql_live_` para producción y `bql_test_` para
+desarrollo. Una key solo funciona en el entorno para el que fue emitida.
+
+## 2. Guárdala en tu entorno
+
+Nunca pegues una key en el control de versiones.
+
+```bash
+export BIBLEQL_API_KEY="bql_live_tu_key_aqui"
+```
+
+## 3. Haz una petición
+
+<ApiExample op="passage" />
+
+Deberías recibir:
+
+```json
+{
+  "data": {
+    "passage": {
+      "reference": "Juan 3:16",
+      "text": "Porque de tal manera amó Dios al mundo, que ha dado á su Hijo unigénito, para que todo aquel que en él cree, no se pierda, mas tenga vida eterna.",
+      "translationName": "Reina Valera 1909"
+    }
+  }
+}
+```
+
+## 4. Entiende la respuesta
+
+GraphQL devuelve exactamente los campos que pediste, dentro de un objeto `data` de nivel
+superior.
+
+- `reference` es la referencia interpretada y normalizada.
+- `text` son todos los versículos encontrados unidos por saltos de línea — cómodo para mostrar.
+- `translationName` es el nombre legible de la traducción.
+
+Si hubieras pedido `verses { verse text }` en lugar de `text`, habrías recibido cada versículo
+por separado. Nada se devuelve si no lo pides.
+
+Los errores llegan en un arreglo `errors` de nivel superior, no como un código de estado HTTP
+de error — consulta [Errores](/reference/errors).
+
+## Siguientes pasos
+
+- Explora de forma interactiva en el <a href={PLAYGROUND_URL}>playground</a>
+- Aprende los [formatos de referencia](/guides/references) — rangos, capítulos, multirrangos
+- Revisa las [traducciones disponibles](/guides/translations)
+- Instala un [SDK](/sdks) si prefieres no escribir GraphQL a mano
+
+:::tip Endpoint
+Todos los ejemplos de este sitio hacen POST a <code>{GRAPHQL_ENDPOINT}</code>. No existe una
+variante `GET`.
+:::

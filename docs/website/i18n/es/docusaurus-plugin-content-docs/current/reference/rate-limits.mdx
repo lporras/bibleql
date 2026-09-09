@@ -1,0 +1,106 @@
+---
+id: rate-limits
+title: Límites de peticiones
+sidebar_position: 2
+description: Los límites configurados, la respuesta 429 y cómo reintentar correctamente.
+---
+
+import { RATE_LIMITS } from "@site/src/constants";
+
+# Límites de peticiones
+
+Se aplican tres límites. Todos se imponen en el borde, antes de interpretar tu query.
+
+<table>
+  <thead>
+    <tr><th>Alcance</th><th>Límite</th><th>Ventana</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Peticiones GraphQL por IP</td>
+      <td>{RATE_LIMITS.graphqlPerIp.limit}</td>
+      <td>por minuto</td>
+    </tr>
+    <tr>
+      <td>Peticiones GraphQL por API key</td>
+      <td>{RATE_LIMITS.graphqlPerKey.limit.toLocaleString("es-ES")}</td>
+      <td>por día</td>
+    </tr>
+    <tr>
+      <td>Formulario de solicitud de API key por IP</td>
+      <td>{RATE_LIMITS.apiKeyRequestPerIp.limit}</td>
+      <td>por hora</td>
+    </tr>
+  </tbody>
+</table>
+
+Los límites por IP y por key son independientes: puedes agotar cualquiera de los dos. El
+endpoint de comprobación de salud está exento.
+
+## Por key significa por key, no por servidor
+
+El límite por key se cuenta contra los **primeros 12 caracteres de tu token**, que son el
+prefijo de la key. Cada proceso, servidor y región que use la misma key comparte una única
+cuota diaria. Levantar diez instancias no te da diez veces la cuota.
+
+Si necesitas cuotas aisladas para cargas de trabajo distintas, solicita keys separadas con
+direcciones de correo separadas — consulta
+[API Keys](/getting-started/api-keys#una-key-por-correo-y-por-entorno).
+
+## La respuesta 429
+
+Superar un límite devuelve HTTP `429` con un encabezado `Retry-After`:
+
+```http
+HTTP/1.1 429 Too Many Requests
+Content-Type: application/json
+Retry-After: 37
+```
+
+```json
+{ "errors": [{ "message": "Rate limit exceeded. Retry after 37 seconds." }] }
+```
+
+`Retry-After` es el número de segundos hasta que la ventana actual se renueva. Respétalo en
+lugar de reintentar de inmediato: reintentar dentro de la ventana no consume nada pero sigue
+fallando.
+
+Las ventanas son fijas, no deslizantes: el contador por minuto se reinicia en el límite, así
+que `Retry-After` puede ser cualquier valor entre 1 y 60 segundos.
+
+## Mantenerse por debajo de los límites
+
+Las medidas más eficaces, más o menos por orden de impacto:
+
+- **Cachea lo que no cambia.** `translations`, `languages`, `books` y `bibleIndex` solo cambian
+  cuando cambia el corpus. Pídelos al arrancar, no en cada petición.
+- **Haz una query, no cinco.** GraphQL permite pedir varios campos en un solo documento; una
+  lista de libros y un pasaje pueden compartir una petición.
+- **Cachea `verseOfTheDay`** el resto del día: la respuesta es estable.
+- **Cachea `semanticSearch`** por cadena de consulta. Es la query más costosa de la API.
+- **Pide solo los campos que necesitas.** No afecta al número de peticiones, pero sí a la
+  latencia y al presupuesto de complejidad.
+
+## Reintentos
+
+Ante un `429`, espera los segundos de `Retry-After` y reintenta una vez. Si ejecutas un proceso
+por lotes, añade jitter para que los workers en paralelo no despierten todos en el mismo
+instante.
+
+Ambos SDKs oficiales lanzan un error específico para este caso — `BibleQL::RateLimitError` en
+Ruby y `RateLimitError` en Node — para que puedas capturarlo sin inspeccionar códigos de
+estado. Consulta [SDKs](/sdks).
+
+## La complejidad de las queries es otro techo
+
+Los límites de peticiones limitan con qué **frecuencia** puedes preguntar. La complejidad
+limita **cuánto** puede pedir una sola query:
+
+| Límite | Valor |
+|---|---|
+| Profundidad máxima | 15 |
+| Complejidad máxima | 300 |
+| Tokens máximos por query | 5.000 |
+
+Superarlos devuelve un error de validación, no un `429`, y no cuenta contra tu cuota. Consulta
+[Comportamiento de la API](/reference/api-behavior).

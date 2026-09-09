@@ -12,8 +12,10 @@
       "@type": "WebAPI",
       "name": "BibleQL GraphQL API",
       "url": "https://bibleql.org/graphql",
-      "documentation": "https://bibleql.org/playground",
-      "description": "A GraphQL API for querying Bible verses, passages, and chapters across <%= @translations_count %> translations in <%= @languages_count %> languages.",
+      <%# to_json emits the surrounding quotes and escapes <, > and & as \uXXXX,
+          which is what keeps this safe to mark html_safe inside a script tag. %>
+      "documentation": <%= docs_url.to_json.html_safe %>,
+      "description": "A GraphQL API for querying Bible verses, passages, and chapters across <%= approximate_count(@translations_count) %> translations in <%= approximate_count(@languages_count) %> languages.",
       "provider": {
         "@type": "Organization",
         "name": "BibleQL",
@@ -33,7 +35,7 @@
         "price": "0",
         "priceCurrency": "USD"
       },
-      "description": "Free, open-source GraphQL Bible API with <%= @translations_count %> translations in <%= @languages_count %> languages."
+      "description": "Free, open-source GraphQL Bible API with <%= approximate_count(@translations_count) %> translations in <%= approximate_count(@languages_count) %> languages."
     }
   ]
 }
