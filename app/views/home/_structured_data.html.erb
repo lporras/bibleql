@@ -15,7 +15,7 @@
       <%# to_json emits the surrounding quotes and escapes <, > and & as \uXXXX,
           which is what keeps this safe to mark html_safe inside a script tag. %>
       "documentation": <%= docs_url.to_json.html_safe %>,
-      "description": "A GraphQL API for querying Bible verses, passages, and chapters across <%= approximate_count(@translations_count) %> translations in <%= approximate_count(@languages_count) %> languages.",
+      "description": "A GraphQL API for querying Bible verses, passages, and chapters across <%= site_metric(:translations) %> translations in <%= site_metric(:languages) %> languages.",
       "provider": {
         "@type": "Organization",
         "name": "BibleQL",
@@ -35,7 +35,7 @@
         "price": "0",
         "priceCurrency": "USD"
       },
-      "description": "Free, open-source GraphQL Bible API with <%= approximate_count(@translations_count) %> translations in <%= approximate_count(@languages_count) %> languages."
+      "description": "Free, open-source GraphQL Bible API with <%= site_metric(:translations) %> translations in <%= site_metric(:languages) %> languages."
     }
   ]
 }

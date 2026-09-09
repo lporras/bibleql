@@ -23,9 +23,10 @@ Rack::Attack.throttle("api_key_requests/ip", limit: 5, period: 1.hour) do |req|
   req.ip if req.path.start_with?("/api-keys/request") && req.post?
 end
 
-# Safelist health check
+# Safelist health check. Uptime monitors and Render's own probe use HEAD as often
+# as GET, and req.get? is false for HEAD.
 Rack::Attack.safelist("health_check") do |req|
-  req.path == "/up" && req.get?
+  req.path == "/up" && (req.get? || req.head?)
 end
 
 # Custom 429 response with JSON body

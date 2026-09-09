@@ -9,9 +9,36 @@ module ApplicationHelper
   # Read per call rather than frozen into a constant at boot, so a .env change
   # takes effect on reload and specs can stub it.
   def docs_url(path = nil)
-    root = ENV.fetch("DOCS_URL", DEFAULT_DOCS_URL).delete_suffix("/")
+    # presence, not fetch's default: an empty DOCS_URL (as `DOCS_URL= rails s`
+    # leaves it) should fall back rather than produce a root-relative link.
+    root = ENV["DOCS_URL"].presence&.delete_suffix("/") || DEFAULT_DOCS_URL
 
     path.present? ? "#{root}/#{path.delete_prefix("/")}" : root
+  end
+
+  # Corpus size as shown on the landing page.
+  #
+  # Deliberately static: the page renders these through approximate_count as
+  # "40+" / "30+" / "1.3M+", so querying for them bought no accuracy — and
+  # COUNT(*) over 1.3M+ verses was slow enough in production to take the page
+  # down. A landing page should not touch the database.
+  #
+  # To refresh, read the real figures and paste them in — rounding is automatic,
+  # so 52 becomes "50+" with no other change:
+  #
+  #   bin/rails runner 'puts Translation.count, Translation.distinct.count(:language), Verse.count'
+  #
+  # Or, without a console, query the live API:
+  #
+  #   { translations { identifier } languages { code } }
+  SITE_METRICS = {
+    translations: 49,
+    languages: 31,
+    verses: 1_360_301
+  }.freeze
+
+  def site_metric(key)
+    approximate_count(SITE_METRICS.fetch(key))
   end
 
   # Round a count down to a friendly approximation for marketing copy: 49 => "40+".
