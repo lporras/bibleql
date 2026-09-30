@@ -58,3 +58,6 @@
 /docs/website/.env.local
 # Generated from docs/generated/schema.graphql by `docusaurus graphql-to-doc`.
 /docs/website/docs/api-reference/
+
+# Node packages, wherever npm/yarn put them
+node_modules/

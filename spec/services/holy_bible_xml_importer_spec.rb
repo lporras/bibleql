@@ -23,6 +23,22 @@ RSpec.describe HolyBibleXmlImporter do
   end
 
   describe "#import!" do
+    describe "offline package export" do
+      include ActiveJob::TestHelper
+
+      before { allow(OfflinePackages).to receive(:configured?).and_return(true) }
+
+      it "enqueues an export when the translation is offline-downloadable" do
+        translation = create(:translation, identifier: "ara-svd", language: "ara", offline_downloadable: true)
+
+        expect { import }.to have_enqueued_job(ExportOfflinePackageJob).with(translation.id)
+      end
+
+      it "does not enqueue an export otherwise" do
+        expect { import }.not_to have_enqueued_job(ExportOfflinePackageJob)
+      end
+    end
+
     it "creates the translation with metadata derived from the filename and XML attributes" do
       expect { import }.to change(Translation, :count).by(1)
 

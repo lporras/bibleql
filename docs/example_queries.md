@@ -1096,3 +1096,55 @@ Response:
   }
 }
 ```
+
+---
+
+## Offline packages
+
+List the translations that can be downloaded for offline use. `offlinePackage` is null when a
+translation isn't redistributable or hasn't been exported yet. Pass the highest
+`schemaVersion` your client understands. See [offline_packages.md](offline_packages.md) for
+the file format.
+
+```graphql
+{
+  translations {
+    identifier
+    offlineDownloadable
+    offlinePackage(schemaVersion: 1) {
+      url
+      sha256
+      sizeBytes
+      uncompressedSizeBytes
+      schemaVersion
+      verseCount
+      updatedAt
+    }
+  }
+}
+```
+
+Response:
+
+```json
+{
+  "data": {
+    "translations": [
+      {
+        "identifier": "spa-rv1909",
+        "offlineDownloadable": true,
+        "offlinePackage": {
+          "url": "https://downloads.bibleql.org/translations/spa-rv1909/v1/3f9c…e21a.sqlite.gz",
+          "sha256": "3f9c…e21a",
+          "sizeBytes": 3355443,
+          "uncompressedSizeBytes": 7549747,
+          "schemaVersion": 1,
+          "verseCount": 31084,
+          "updatedAt": "2026-09-29T14:03:11Z"
+        }
+      },
+      { "identifier": "eng-niv", "offlineDownloadable": false, "offlinePackage": null }
+    ]
+  }
+}
+```

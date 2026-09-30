@@ -1089,6 +1089,29 @@ index.forEach((b) => console.log(b.name, b.chapterCount));`,
 }`,
     },
   },
+
+  // No response captured yet: packages are not published in production. Neither SDK
+  // exposes offline packages, so the Ruby/Node tabs show the "not available" notice.
+  offlinePackage: {
+    graphql: `query {
+  translation(identifier: "spa-rv1909") {
+    identifier
+    note
+    offlineDownloadable
+    offlinePackage(schemaVersion: 1) {
+      url
+      sha256
+      sizeBytes
+      uncompressedSizeBytes
+      schemaVersion
+      verseCount
+      updatedAt
+    }
+  }
+}`,
+    ruby: null,
+    node: null,
+  },
 };
 
 export default examples;

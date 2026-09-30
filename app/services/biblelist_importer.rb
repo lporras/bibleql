@@ -61,6 +61,7 @@ class BiblelistImporter
     end
 
     ConcordanceIndexer.new(translation).call
+    OfflinePackages.enqueue_export(translation)
     imported_count
   end
 
@@ -75,6 +76,7 @@ class BiblelistImporter
       language_name: metadata["language_name"],
       note: metadata["note"].presence || attributes["status"].presence || attributes["info"].presence
     )
+    translation.offline_downloadable = metadata["offline_downloadable"] == true if metadata.key?("offline_downloadable")
     translation.save!
     translation
   end

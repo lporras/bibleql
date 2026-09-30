@@ -50,8 +50,11 @@ Rails.application.configure do
   # infinite-TTL concordance cache to actually survive a deploy.
   config.cache_store = :solid_cache_store
 
-  # Use async queue adapter (in-process, no separate queue database needed).
-  config.active_job.queue_adapter = :async
+  # Solid Queue stores jobs in the primary Postgres (the `queue` entry in
+  # config/database.yml points there), so jobs enqueued from a rake shell survive
+  # the process exiting. Run the worker inside Puma with SOLID_QUEUE_IN_PUMA=true
+  # (config/puma.rb) or as a separate `bin/jobs` process.
+  config.active_job.queue_adapter = :solid_queue
 
   # Ignore bad email addresses and do not raise email delivery errors.
   # Set this to true and configure the email server for immediate delivery to raise delivery errors.

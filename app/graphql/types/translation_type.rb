@@ -21,11 +21,24 @@ module Types
       description: "Whether verses in this translation carry Strong's number annotations (Phase 2 — always false today)"
     field :concordance_indexed_at, GraphQL::Types::ISO8601DateTime, null: true,
       description: "When the concordance index was last built. Null means concordance queries will error until `rake concordance:index` runs."
+    field :offline_downloadable, Boolean, null: false,
+      description: "Whether this translation's license allows offering it as a downloadable offline package"
+    field :offline_package, Types::OfflinePackageType, null: true,
+      description: "The downloadable offline package. Null if the translation is not offline-downloadable or has not been exported yet." do
+      argument :schema_version, Integer, required: false, default_value: OfflinePackages::Builder::SCHEMA_VERSION,
+        description: "Highest package format version the client understands"
+    end
 
     def books
       BibleIndexBuilder.new(translation: object).call
     end
 
     def has_strongs_tagging = false
+
+    def offline_package(schema_version:)
+      return unless object.offline_downloadable?
+
+      dataloader.with(Sources::OfflinePackageSource, schema_version).load(object.id)
+    end
   end
 end

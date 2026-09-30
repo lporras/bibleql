@@ -10,6 +10,9 @@
 #   book_names_from  identifier of an imported translation whose localized book
 #                    names are copied over (these files number books 1-66 and
 #                    carry no book names at all)
+#   offline_downloadable  whether the translation may be exported as a downloadable
+#                    offline package (see docs/offline_packages.md). API access is
+#                    not redistribution rights: keep false unless you hold them.
 #
 # NOTE: every translation here is copyrighted, all rights reserved. Confirm you
 # hold a license before exposing any of them through the public API.
@@ -21,6 +24,7 @@ eng-lsb:
   language: eng
   language_name: English
   book_names_from: eng-web
+  offline_downloadable: false
 eng-niv:
   file: EnglishNIVBible.xml
   name: New International Version
@@ -29,6 +33,7 @@ eng-niv:
   language_name: English
   note: Copyright © 1973, 1978, 1984, 2011 by Biblica, Inc.® All rights reserved worldwide.
   book_names_from: eng-web
+  offline_downloadable: false
 eng-nlt:
   file: EnglishNLTBible.xml
   name: New Living Translation
@@ -37,6 +42,7 @@ eng-nlt:
   language_name: English
   note: Copyright © 1996, 2004, 2015 by Tyndale House Foundation. All rights reserved.
   book_names_from: eng-web
+  offline_downloadable: false
 spa-dhh:
   file: SpanishDHHBible.xml
   name: Dios habla hoy
@@ -44,6 +50,7 @@ spa-dhh:
   language: spa
   language_name: Spanish
   book_names_from: spa-bes
+  offline_downloadable: false
 spa-lbla:
   file: SpanishLBLABible.xml
   name: La Biblia de las Américas
@@ -51,6 +58,7 @@ spa-lbla:
   language: spa
   language_name: Spanish
   book_names_from: spa-bes
+  offline_downloadable: false
 spa-nvi:
   file: SpanishNVIBible.xml
   name: Nueva Versión Internacional
@@ -58,3 +66,4 @@ spa-nvi:
   language: spa
   language_name: Spanish
   book_names_from: spa-bes
+  offline_downloadable: false

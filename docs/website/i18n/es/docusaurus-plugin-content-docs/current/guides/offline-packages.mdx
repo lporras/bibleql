@@ -1,0 +1,110 @@
+---
+id: offline-packages
+title: Paquetes sin conexión
+sidebar_position: 10
+description: Descargar una traducción completa como archivo SQLite para leer, buscar y usar la concordancia sin conexión.
+---
+
+import ApiExample from "@site/src/components/ApiExample";
+
+# Paquetes sin conexión
+
+Un **paquete sin conexión** es una traducción completa en un único archivo SQLite comprimido con
+gzip. Se descarga una vez y después se puede leer, buscar y consultar la concordancia en el
+dispositivo, sin red y sin llamadas a la API.
+
+El archivo se sirve desde una CDN, no desde `/graphql`, así que la descarga no cuenta para los
+[límites de uso](/reference/rate-limits) ni para la cuota diaria de tu clave de API. La API solo
+se usa para saber dónde está el archivo.
+
+## Encontrar el paquete
+
+<ApiExample op="offlinePackage" />
+
+Una respuesta tiene este aspecto:
+
+```json
+{
+  "data": {
+    "translation": {
+      "identifier": "spa-rv1909",
+      "note": "Public Domain",
+      "offlineDownloadable": true,
+      "offlinePackage": {
+        "url": "https://downloads.bibleql.org/translations/spa-rv1909/v1/a868db2d…9019d.sqlite.gz",
+        "sha256": "a868db2d…9019d",
+        "sizeBytes": 3355443,
+        "uncompressedSizeBytes": 7549747,
+        "schemaVersion": 1,
+        "verseCount": 31084,
+        "updatedAt": "2026-09-29T14:03:11Z"
+      }
+    }
+  }
+}
+```
+
+Para listar todos los paquetes a la vez:
+
+```graphql
+query {
+  translations {
+    identifier
+    offlinePackage { url sha256 sizeBytes }
+  }
+}
+```
+
+### Cuando `offlinePackage` es null
+
+- **`offlineDownloadable: false`**: la licencia de la traducción no permite redistribuirla.
+  Muchas traducciones están disponibles en la API pero no como descarga. Para esas, sigue usando
+  la API.
+- **`offlineDownloadable: true`**: todavía no se ha publicado ningún paquete. Vuelve a intentarlo
+  más tarde.
+
+Pasa el `schemaVersion` más alto que tu cliente sepa leer. Las versiones anteriores siguen
+publicadas mientras haya clientes que puedan pedirlas.
+
+## Descargar de forma segura
+
+1. Descarga `url` en un archivo temporal. Usa `sizeBytes` para mostrar el progreso y
+   `uncompressedSizeBytes` para comprobar antes el espacio libre en disco.
+2. Comprueba que el SHA-256 de los bytes descargados coincide con `sha256`. Si no coincide,
+   borra el archivo.
+3. Descomprímelo y confirma que `PRAGMA application_id` es `1112624177` (`0x42514C31`, "BQL1") y
+   que `PRAGMA user_version` es el `schemaVersion` que pediste.
+4. Renómbralo a su nombre final, p. ej. `spa-rv1909.v1.sqlite`, y guarda el `sha256` junto a él.
+5. Ábrelo en modo de solo lectura.
+
+Las URL de los paquetes nunca cambian: cada nueva exportación tiene una URL nueva. Para saber si
+hay una actualización, compara el `sha256` que guardaste con el `offlinePackage.sha256` actual.
+Si son distintos, hay una versión nueva.
+
+## Qué contiene el archivo
+
+| Tabla | Contenido |
+| --- | --- |
+| `meta` | Pares `key`/`value`: `translation_identifier`, `translation_name`, `language_code`, `license_note`, `exported_at`, `verse_count`, … |
+| `books` | `id` (posición canónica 1–66), `code` (`GEN`, `JHN`, igual que `bookId`), `name` (localizado, p. ej. `Juan`), `testament` (`OT`/`NT`), `chapters` |
+| `verses` | `id`, `book_id`, `chapter`, `verse`, `text`. `id` sigue el orden canónico. |
+| `verses_fts` | Índice de texto completo (SQLite FTS5) sobre `verses.text`. Ignora los acentos: `espiritu` encuentra `espíritu`. |
+
+```sql
+-- Juan 3:16
+SELECT v.text FROM verses v JOIN books b ON b.id = v.book_id
+WHERE b.code = 'JHN' AND v.chapter = 3 AND v.verse = 16;
+
+-- Concordancia: todos los versículos que contienen una palabra, en orden canónico
+SELECT b.name, v.chapter, v.verse, v.text
+FROM verses_fts f
+JOIN verses v ON v.id = f.rowid
+JOIN books b ON b.id = v.book_id
+WHERE verses_fts MATCH 'espiritu'
+ORDER BY v.id;
+```
+
+:::tip Muestra la licencia
+Muestra `meta.license_note` allí donde aparezca la traducción, igual que harías con el campo
+`note` de la API.
+:::

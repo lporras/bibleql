@@ -277,6 +277,48 @@ type Mutation {
 }
 
 """
+A downloadable SQLite package of one translation for offline use. Download
+`url`, verify `sha256`, gunzip, then open the file. See the offline packages
+documentation for its format.
+"""
+type OfflinePackage {
+  """
+  Package format version (SQLite `PRAGMA user_version`)
+  """
+  schemaVersion: Int!
+
+  """
+  Hex SHA-256 of the gzipped file, to verify the download
+  """
+  sha256: String!
+
+  """
+  Download size in bytes (gzipped)
+  """
+  sizeBytes: Int!
+
+  """
+  Disk space needed once gunzipped, in bytes
+  """
+  uncompressedSizeBytes: Int!
+
+  """
+  When this package was last published
+  """
+  updatedAt: ISO8601DateTime!
+
+  """
+  Public HTTPS URL of the gzipped SQLite file. Immutable: a new export gets a new URL.
+  """
+  url: String!
+
+  """
+  Number of verses in the package
+  """
+  verseCount: Int!
+}
+
+"""
 A resolved range of verses, returned by the passage and verseOfTheDay queries
 """
 type Passage {
@@ -662,6 +704,21 @@ type Translation {
   Licensing or attribution note (e.g. 'Public Domain', 'CC BY 4.0')
   """
   note: String
+
+  """
+  Whether this translation's license allows offering it as a downloadable offline package
+  """
+  offlineDownloadable: Boolean!
+
+  """
+  The downloadable offline package. Null if the translation is not offline-downloadable or has not been exported yet.
+  """
+  offlinePackage(
+    """
+    Highest package format version the client understands
+    """
+    schemaVersion: Int = 1
+  ): OfflinePackage
 }
 
 """
