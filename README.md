@@ -79,6 +79,9 @@ git submodule update --init
 # Install dependencies
 bundle install
 
+# Local environment variables (all optional — see below)
+cp .env.example .env
+
 # Create and migrate the database
 bin/rails db:create db:migrate
 
@@ -91,6 +94,41 @@ bundle exec rake "bible:import_one[eng-web]"
 # Build the concordance index (required for concordance queries)
 bundle exec rake concordance:index
 ```
+
+### Environment variables
+
+Local settings live in `.env`, which is gitignored and loaded by dotenv-rails. [`.env.example`](.env.example) lists every variable with a comment explaining it. Nothing is required to run the API locally: each feature below is simply off until its variables are set.
+
+| Variables | Needed for |
+| --- | --- |
+| `DATABASE_URL` | A database other than the local `bibleql_development` |
+| `OPENAI_API_KEY` | The `semanticSearch` query |
+| `OFFLINE_R2_ACCOUNT_ID`, `OFFLINE_R2_ACCESS_KEY_ID`, `OFFLINE_R2_SECRET_ACCESS_KEY`, `OFFLINE_R2_BUCKET`, `OFFLINE_PUBLIC_BASE_URL` | Exporting offline translation packages (see below) |
+| `DOCS_URL` | Pointing documentation links at a local `bin/docs` server |
+
+### Offline translation packages
+
+Redistributable translations can be exported as gzipped SQLite files that clients download once and use offline ([format and client contract](docs/offline_packages.md)). The files are uploaded to a Cloudflare R2 bucket. To set it up for development:
+
+1. In the Cloudflare dashboard, create an R2 bucket.
+2. In **R2 → Manage API tokens**, create an **Object Read & Write** token scoped to that bucket. Copy the Access Key ID and Secret Access Key (the secret is shown only once). Your Account ID is in **Account Details** on the R2 overview page.
+3. In the bucket's **Settings**, enable the **Public Development URL** (`https://pub-<hash>.r2.dev`).
+4. Put the five `OFFLINE_*` values in `.env`, then check them:
+
+```bash
+bundle exec rake offline:check_storage             # uploads a probe object and fetches it back publicly
+
+# Only translations whose license allows redistribution may be exported (default: none)
+DRY_RUN=1 bundle exec rake offline:flag_public_domain
+bundle exec rake "offline:flag[spa-rv1909,true]"
+
+# Exports run as background jobs, so start the worker (bin/dev starts it too)
+bin/jobs
+bundle exec rake "offline:export_one[spa-rv1909]"
+bundle exec rake offline:list
+```
+
+Exports can also be started from the admin panel under **Offline Packages**, and every import re-exports downloadable translations automatically.
 
 ### Additional translations
 
@@ -178,8 +216,12 @@ bundle exec rake concordance:status   # confirm indexed_at / stemming per transl
 ## Running Locally
 
 ```bash
+bin/dev          # Rails server, Tailwind watcher, Solid Queue worker and docs site
+# or just the API:
 bin/rails server
 ```
+
+Background jobs (offline package exports, emails) run on Solid Queue. With plain `bin/rails server`, start `bin/jobs` in another terminal to process them.
 
 - **GraphQL endpoint:** `POST http://localhost:3000/graphql`
 - **Playground:** `http://localhost:3000/playground`
@@ -326,6 +368,8 @@ bin/rubocop
 ## Deployment
 
 BibleQL is deployed using Docker and Kamal. See [config/deploy.yml](config/deploy.yml) and [Dockerfile](Dockerfile) for details.
+
+Production needs `SOLID_QUEUE_IN_PUMA=true` so the web process also runs the background-job worker, and, for offline packages, the five `OFFLINE_*` variables pointing at the production bucket (with a custom domain such as `https://downloads.bibleql.org` as `OFFLINE_PUBLIC_BASE_URL`).
 
 The CI pipeline (GitHub Actions) runs security scans (Brakeman, Bundler Audit), linting (RuboCop), and tests (RSpec) on every PR.
 
