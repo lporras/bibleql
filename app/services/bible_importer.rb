@@ -32,6 +32,7 @@ class BibleImporter
     end
 
     ConcordanceIndexer.new(translation).call
+    OfflinePackages.enqueue_export(translation)
   rescue => e
     puts "  ERROR: #{e.message} (#{e.class})"
   end

@@ -37,6 +37,13 @@ RSpec.describe BiblelistImporter do
   end
 
   describe "#import!" do
+    it "takes offline_downloadable from the YAML config" do
+      create(:translation, identifier: "eng-niv", name: "NIV", offline_downloadable: true)
+      import
+
+      expect(Translation.find_by(identifier: "eng-niv").offline_downloadable).to be(false)
+    end
+
     it "creates the translation with metadata from the YAML config" do
       expect { import }.to change(Translation, :count).by(1)
 

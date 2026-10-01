@@ -57,6 +57,15 @@ bundle exec rake concordance:index                  # all translations
 bundle exec rake "concordance:index[spa-rv1909]"    # one translation
 bundle exec rake concordance:status                 # per-translation index status
 
+# Offline translation packages (see docs/offline_packages.md). Needs OFFLINE_R2_* env vars and a
+# running Solid Queue worker (bin/jobs, started by bin/dev)
+bundle exec rake offline:check_storage              # verify R2 credentials + public URL
+DRY_RUN=1 bundle exec rake offline:flag_public_domain
+bundle exec rake "offline:flag[eng-web,true]"       # licensing gate, default false
+bundle exec rake offline:list
+bundle exec rake "offline:export_one[spa-rv1909]"   # FORCE=1 to republish unchanged data
+bundle exec rake offline:export_all
+
 # Run the server
 bin/rails server
 
@@ -107,6 +116,8 @@ bundle exec rake api_keys:list
 - **Framework**: Rails 8.1 (API + standard views via Hotwire/Turbo/Stimulus)
 - **GraphQL**: graphql-ruby gem (v2.5) with GraphiQL IDE in development; max_complexity: 300, max_depth: 15
 - **Database**: PostgreSQL with Solid Cache, Solid Queue, and Solid Cable for production
+- **Background jobs**: Solid Queue in development and production, tables in the primary DB. Production runs the worker inside Puma (`SOLID_QUEUE_IN_PUMA=true`); development runs `bin/jobs` (in `Procfile.dev`)
+- **Offline packages**: per-translation SQLite files (`sqlite3` gem, FTS5) uploaded to Cloudflare R2 (`aws-sdk-s3`)
 - **CORS**: Enabled for `/graphql` endpoint (origins: "*")
 - **Bible Data**: open-bibles git submodule (db/open-bibles/) parsed via bible_parser gem
 - **Reference Parsing**: bible_ref gem + localized book name fallback
@@ -127,6 +138,7 @@ bundle exec rake api_keys:list
 - **Book** — Canonical book with standardized book_id (e.g., "MAT", "GEN")
 - **BookName** — Localized book name per translation (e.g., "Mateo" for Spanish Matthew)
 - **Verse** — Individual verse with translation, book, chapter, verse_number, text, plus `text_search` (tsvector, GIN-indexed) for concordance
+- **OfflinePackage** — Published offline SQLite package per translation and schema version (`url`, `sha256`, sizes, `source_digest`); gated by `translations.offline_downloadable`
 - **ConcordanceWordIndex** — Per-translation word frequency (`lemma`, `verse_count`, `total_occurrences`) from `ts_stat`, backing `concordanceIndex`
 - **ApiKey** — API key with bcrypt digest, environment-aware prefixes (`bql_live_`/`bql_test_`), usage tracking
 - **ApiKeyRequest** — Self-service API key request (pending/approved/rejected workflow)
@@ -147,6 +159,7 @@ bundle exec rake api_keys:list
 - `bibleIndex(translation)` — Get the structural hierarchy of books, chapters, and verse counts
 - `concordance(translation, word, book, testament, first, after)` — Exhaustive, canonically-ordered concordance for a word, with per-book/testament counts and KWIC context
 - `concordanceIndex(translation, prefix, minOccurrences, first)` — Alphabetical word index with occurrence frequencies
+- `translations { offlineDownloadable offlinePackage(schemaVersion) { url sha256 sizeBytes … } }` — Downloadable offline SQLite packages (batch-loaded via `Sources::OfflinePackageSource`)
 
 ## Key Services
 
@@ -166,6 +179,7 @@ bundle exec rake api_keys:list
 - **ConcordanceWordIndexLookup** (`app/services/concordance_word_index_lookup.rb`) — Alphabetical word-frequency lookup backing `concordanceIndex`
 - **ConcordanceIndexer** (`app/services/concordance_indexer.rb`) — Populates `verses.text_search` using the per-translation `regconfig` and rebuilds `concordance_word_index`. Called at the end of every import.
 - **TextSearchConfigResolver** (`app/services/text_search_config_resolver.rb`) — Maps a translation's `language` to a PostgreSQL text search configuration; falls back to `simple`
+- **OfflinePackages** (`app/services/offline_packages.rb` + `offline_packages/`) — `Builder` writes a translation to SQLite following `schema_v1.sql` (canonical-order `verses.id`, localized book names, FTS5 `unicode61 remove_diacritics 2`); `Publisher` gzips and uploads to R2 under an immutable content-addressed key; `ExportOfflinePackageJob` ties them together and skips unchanged `source_digest`. Config via `OFFLINE_R2_*`/`OFFLINE_PUBLIC_BASE_URL`. Every importer calls `OfflinePackages.enqueue_export` after indexing. Admin page: **Offline Packages** (`app/admin/offline_packages.rb`)
 - **ApiKeyMailer** (`app/mailers/api_key_mailer.rb`) — Sends approval/rejection emails via Resend
 
 ## Authentication
@@ -186,6 +200,12 @@ All `POST /graphql` requests require an API key via the `Authorization: Bearer <
   automatically. Do not add manual cache-clearing logic.
 - `context` contains `<mark>` HTML. Never interpolate user input into it beyond `plainto_tsquery`.
 - Always use `plainto_tsquery`, never `to_tsquery`, for user-supplied words.
+
+## Offline Package Invariants
+
+- Nothing is exported unless `translations.offline_downloadable` is true. Never default it to true, and never flag `db/biblelist/` translations without redistribution rights.
+- `schema_v1.sql` is a client contract: never change it in place. Add `schema_v2.sql` and bump `SCHEMA_VERSION`.
+- Storage keys are content-addressed and uploaded as immutable. Never overwrite an existing key.
 
 ## Skills
 

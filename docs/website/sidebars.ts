@@ -35,6 +35,7 @@ const sidebars: SidebarsConfig = {
         "guides/concordance",
         "guides/verse-of-the-day",
         "guides/bible-index",
+        "guides/offline-packages",
       ],
     },
     {

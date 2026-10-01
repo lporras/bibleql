@@ -206,6 +206,24 @@ query GetTranslation {
   }
 }
 
+query OfflinePackage {
+  translation(identifier: "spa-rv1909") {
+    identifier
+    name
+    note
+    offlineDownloadable
+    offlinePackage(schemaVersion: 1) {
+      url
+      sha256
+      sizeBytes
+      uncompressedSizeBytes
+      schemaVersion
+      verseCount
+      updatedAt
+    }
+  }
+}
+
 query ListLanguages {
   languages {
     code

@@ -102,3 +102,8 @@ end
 
 gem "rspec-rails", "~> 8.0", groups: [ :development, :test ]
 gem "factory_bot_rails", "~> 6.4", groups: [ :development, :test ]
+
+# Offline translation packages: writes the downloadable SQLite files (not the app database)
+gem "sqlite3", ">= 2.1"
+# Uploads offline packages to Cloudflare R2 (S3-compatible)
+gem "aws-sdk-s3", require: false

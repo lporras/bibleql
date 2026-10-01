@@ -87,6 +87,7 @@ class HolyBibleXmlImporter
     end
 
     ConcordanceIndexer.new(translation).call
+    OfflinePackages.enqueue_export(translation)
     imported_count
   end
 
