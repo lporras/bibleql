@@ -35,7 +35,17 @@ port ENV.fetch("PORT", 3000)
 plugin :tmp_restart
 
 # Run the Solid Queue supervisor inside of Puma for single-server deployments.
-plugin :solid_queue if ENV["SOLID_QUEUE_IN_PUMA"]
+if ENV["SOLID_QUEUE_IN_PUMA"]
+  plugin :solid_queue
+  # Run the dispatcher, worker and scheduler as threads in the Puma process instead of
+  # forking a supervisor plus three more Rails processes, which together exceeded a
+  # 512 MB instance.
+  solid_queue_mode :async
+  # The plugin starts Solid Queue from the Puma master, which only loads the app in
+  # single mode (cluster masters don't, so SolidQueue is undefined there). Render also
+  # sets WEB_CONCURRENCY=1 by default, so pin single mode here instead of relying on it.
+  workers 0
+end
 
 # Specify the PID file. Defaults to tmp/pids/server.pid in development.
 # In other environments, only set the PID file if requested.
