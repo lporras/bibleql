@@ -120,5 +120,8 @@ bundle exec rake offline:export_all
 - In the admin panel, **Offline Packages** has a **Generate** button per translation and a batch
   action for several. Both force a republish.
 - Uploaded objects are immutable (`Cache-Control: public, max-age=31536000, immutable`). Old
-  versions are left in the bucket, so configure an R2 lifecycle rule to delete objects under
-  `translations/` older than 30+ days.
+  versions are left in the bucket. Do **not** add an age-based R2 lifecycle rule on
+  `translations/`: R2 expires objects by upload age, so it would also delete the current package
+  of any translation that hasn't been re-exported recently. Old versions are small (about 3 MB
+  each). If they ever need cleaning up, delete only the objects no `offline_packages.storage_key`
+  references.
