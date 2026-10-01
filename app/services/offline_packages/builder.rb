@@ -44,25 +44,34 @@ module OfflinePackages
     end
 
     # Digest of the data (not the file bytes), so an unchanged translation can skip
-    # re-uploading. Covers everything written except exported_at.
+    # re-uploading. Covers everything written except exported_at. Fed one book at a
+    # time so the whole Bible is never held in memory as one string.
     def source_digest
-      @source_digest ||= Digest::SHA256.hexdigest(
-        { schema: SCHEMA_VERSION, meta: translation_meta, books: book_rows, verses: verse_rows }.to_json
-      )
+      @source_digest ||= begin
+        digest = Digest::SHA256.new
+        digest << { schema: SCHEMA_VERSION, meta: translation_meta, books: book_rows }.to_json
+        each_book_of_verses { |rows| digest << rows.to_json }
+        digest.hexdigest
+      end
     end
 
     def verse_count
-      verse_rows.size
+      @verse_count ||= translation.verses.count
     end
 
     private
 
-    # ~31k rows fit comfortably in memory; one ordered pluck keeps canonical order.
-    def verse_rows
-      @verse_rows ||= translation.verses
-        .joins(:book)
-        .order("books.position", "verses.chapter", "verses.verse_number")
-        .pluck("books.position", "verses.chapter", "verses.verse_number", "verses.text")
+    # Yields [position, chapter, verse, text] rows one book at a time, books in canonical
+    # order. Loading a whole translation at once (~31k rows plus copies) pushed a 512 MB
+    # instance over its memory limit; the largest book (Psalms) is ~2.5k rows.
+    def each_book_of_verses
+      book_rows.each do |position, *|
+        yield translation.verses
+          .joins(:book)
+          .where(books: { position: position })
+          .order("verses.chapter", "verses.verse_number")
+          .pluck("books.position", "verses.chapter", "verses.verse_number", "verses.text")
+      end
     end
 
     # [position, code, localized name, testament, chapter count]
@@ -88,8 +97,13 @@ module OfflinePackages
     end
 
     def insert_verses(db)
-      rows = verse_rows.each.with_index(1).map { |(book, chapter, verse, text), id| [ id, book, chapter, verse, text ] }
-      insert_rows(db, "INSERT INTO verses (id, book_id, chapter, verse, text) VALUES (?, ?, ?, ?, ?)", rows)
+      stmt = db.prepare("INSERT INTO verses (id, book_id, chapter, verse, text) VALUES (?, ?, ?, ?, ?)")
+      id = 0
+      each_book_of_verses do |rows|
+        rows.each { |book, chapter, verse, text| stmt.execute(id += 1, book, chapter, verse, text) }
+      end
+    ensure
+      stmt&.close
     end
 
     def insert_meta(db)
