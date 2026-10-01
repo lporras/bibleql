@@ -41,6 +41,10 @@ if ENV["SOLID_QUEUE_IN_PUMA"]
   # forking a supervisor plus three more Rails processes, which together exceeded a
   # 512 MB instance.
   solid_queue_mode :async
+  # The plugin starts Solid Queue from the Puma master, which only loads the app in
+  # single mode (cluster masters don't, so SolidQueue is undefined there). Render also
+  # sets WEB_CONCURRENCY=1 by default, so pin single mode here instead of relying on it.
+  workers 0
 end
 
 # Specify the PID file. Defaults to tmp/pids/server.pid in development.
