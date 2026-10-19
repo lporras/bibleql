@@ -1,12 +1,12 @@
 /**
- * One definition per operation, rendered into GraphQL / cURL / Ruby / Node tabs by
- * <ApiExample>. The cURL command is *derived* from `graphql` at render time, so the
- * four tabs cannot drift apart and the JSON escaping is never written by hand.
+ * One definition per operation, rendered into GraphQL / cURL / Ruby / Node / Python
+ * tabs by <ApiExample>. The cURL command is *derived* from `graphql` at render time, so
+ * it cannot drift from the GraphQL tab and the JSON escaping is never written by hand.
  *
  * `{{translation}}` and `{{reference}}` are substituted with locale-appropriate values
  * from EXAMPLES in ../constants.ts.
  *
- * Where an SDK has no method for an operation, set `ruby` or `node` to `null` and
+ * Where an SDK has no method for an operation, set `ruby`, `node` or `python` to `null` and
  * <ApiExample> renders an honest "not available" notice instead of inventing an API.
  * Method names below are transcribed from the published SDK READMEs.
  */
@@ -20,6 +20,11 @@ export interface Example {
   ruby: string | null;
   /** Node snippet using bibleql-js, or null when the package has no such method. */
   node: string | null;
+  /**
+   * Python snippet using the `bibleql` package, or null when it has no such method.
+   * Avoid f-string `{{` escapes: they collide with the `{{placeholder}}` syntax.
+   */
+  python: string | null;
   /**
    * Real response per documentation locale, because the verse text differs by
    * translation — an English example cannot show Spanish output.
@@ -50,6 +55,10 @@ puts passage.text`,
 });
 
 console.log(passage.reference, passage.text);`,
+    python: `passage = client.passage("{{reference}}", translation="{{translation}}")
+
+print(passage.reference)
+print(passage.text)`,
     response: {
       en: `{
   "data": {
@@ -90,6 +99,10 @@ puts verse.text`,
 });
 
 console.log(\`\${verse.bookName} \${verse.chapter}:\${verse.verse}\`, verse.text);`,
+    python: `verse = client.verse("JHN", 3, 16, translation="{{translation}}")
+
+print(f"{verse.book_name} {verse.chapter}:{verse.verse}")
+print(verse.text)`,
     response: {
       en: `{
   "data": {
@@ -129,6 +142,10 @@ verses.each { |v| puts "#{v.verse}. #{v.text}" }`,
 });
 
 verses.forEach((v) => console.log(\`\${v.verse}. \${v.text}\`));`,
+    python: `verses = client.chapter("JHN", 3, translation="{{translation}}")
+
+for v in verses:
+    print(f"{v.verse}. {v.text}")`,
     response: {
       en: `{
   "data": {
@@ -186,6 +203,8 @@ end`,
     node: `const translations = await client.translations();
 
 translations.forEach((t) => console.log(t.identifier, t.name, t.note));`,
+    python: `for t in client.translations():
+    print(f"{t.identifier} — {t.name} ({t.note})")`,
     response: {
       en: `{
   "data": {
@@ -257,6 +276,9 @@ puts translation.name`,
     node: `const translation = await client.translation("{{translation}}");
 
 console.log(translation.name);`,
+    python: `translation = client.translation("{{translation}}")
+
+print(translation.name)`,
     response: {
       en: `{
   "data": {
@@ -298,6 +320,8 @@ end`,
     node: `const languages = await client.languages();
 
 languages.forEach((l) => console.log(l.code, l.translationCount));`,
+    python: `for language in client.languages():
+    print(f"{language.code}: {language.translation_count} translations")`,
     response: {
       en: `{
   "data": {
@@ -353,6 +377,8 @@ languages.forEach((l) => console.log(l.code, l.translationCount));`,
     node: `const books = await client.books();
 
 books.forEach((b) => console.log(b.bookId, b.name));`,
+    python: `for b in client.books():
+    print(f"{b.book_id} — {b.name}")`,
     response: {
       en: `{
   "data": {
@@ -425,6 +451,10 @@ results.each { |v| puts "#{v.book_name} #{v.chapter}:#{v.verse}" }`,
 });
 
 results.forEach((v) => console.log(\`\${v.bookName} \${v.chapter}:\${v.verse}\`));`,
+    python: `results = client.search("{{searchTerm}}", translation="{{translation}}", limit=5)
+
+for v in results:
+    print(f"{v.book_name} {v.chapter}:{v.verse}")`,
     response: {
       en: `{
   "data": {
@@ -503,6 +533,10 @@ results.forEach((v) => console.log(\`\${v.bookName} \${v.chapter}:\${v.verse}\`)
 });
 
 results.forEach((r) => console.log(r.similarity, r.verse.text));`,
+    python: `results = client.semantic_search("fe y esperanza", limit=5)
+
+for r in results:
+    print(f"{r.similarity:.2f}", r.verse.text)`,
     response: {
       en: `{
   "data": {
@@ -627,6 +661,9 @@ puts "#{verse.book_name} #{verse.chapter}:#{verse.verse}"`,
 });
 
 console.log(verse.bookName, verse.chapter, verse.verse);`,
+    python: `verse = client.random_verse(translation="{{translation}}", testament="NT")
+
+print(f"{verse.book_name} {verse.chapter}:{verse.verse}")`,
     response: {
       en: `{
   "data": {
@@ -667,6 +704,10 @@ puts passage.text`,
 });
 
 console.log(passage.reference, passage.text);`,
+    python: `passage = client.verse_of_the_day(translation="{{translation}}")
+
+print(passage.reference)
+print(passage.text)`,
     response: {
       en: `{
   "data": {
@@ -703,6 +744,10 @@ index.each { |book| puts "#{book.name}: #{book.chapter_count} chapters" }`,
 });
 
 index.forEach((b) => console.log(b.name, b.chapterCount));`,
+    python: `index = client.bible_index(translation="{{translation}}")
+
+for book in index:
+    print(f"{book.name}: {book.chapter_count} chapters")`,
     response: {
       en: `{
   "data": {
@@ -787,9 +832,20 @@ index.forEach((b) => console.log(b.name, b.chapterCount));`,
     }
   }
 }`,
-    // Neither SDK exposes concordance yet.
+    // Only the Python client exposes concordance so far.
     ruby: null,
     node: null,
+    python: `page = client.concordance("misericordia", translation="spa-rv1909", first=10)
+
+print(page.total_count, page.entry.surface_forms)
+print(page.entry.occurrences_by_testament.old, page.entry.occurrences_by_testament.new)
+
+for occurrence in page.occurrences:
+    v = occurrence.verse
+    print(f"{v.book_name} {v.chapter}:{v.verse}", occurrence.context)
+
+# Next page: client.concordance(..., after=page.end_cursor)
+# Or walk every page lazily: client.iter_concordance("misericordia", translation="spa-rv1909")`,
     response: {
       en: `{
   "data": {
@@ -948,6 +1004,14 @@ index.forEach((b) => console.log(b.name, b.chapterCount));`,
 }`,
     ruby: null,
     node: null,
+    python: `page = client.concordance(
+    "misericordia", translation="spa-rv1909", book="Salmos", first=10
+)
+
+print(page.total_count)
+for occurrence in page.occurrences:
+    v = occurrence.verse
+    print(f"{v.book_name} {v.chapter}:{v.verse}")`,
     response: {
       en: `{
   "data": {
@@ -1042,6 +1106,10 @@ index.forEach((b) => console.log(b.name, b.chapterCount));`,
 }`,
     ruby: null,
     node: null,
+    python: `entries = client.concordance_index(translation="spa-rv1909", prefix="mis", first=5)
+
+for e in entries:
+    print(e.lemma, e.verse_count, e.total_occurrences)`,
     response: {
       en: `{
   "data": {
@@ -1090,8 +1158,8 @@ index.forEach((b) => console.log(b.name, b.chapterCount));`,
     },
   },
 
-  // No response captured yet: packages are not published in production. Neither SDK
-  // exposes offline packages, so the Ruby/Node tabs show the "not available" notice.
+  // No response captured yet: packages are not published in production. No SDK
+  // exposes offline packages, so the SDK tabs show the "not available" notice.
   offlinePackage: {
     graphql: `query {
   translation(identifier: "spa-rv1909") {
@@ -1111,6 +1179,7 @@ index.forEach((b) => console.log(b.name, b.chapterCount));`,
 }`,
     ruby: null,
     node: null,
+    python: null,
   },
 };
 

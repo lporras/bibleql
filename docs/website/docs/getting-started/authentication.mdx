@@ -60,8 +60,9 @@ The key identifies you and counts against your quota. Treat it like a password.
 
 - **Keep it server-side.** Anything shipped to a browser or mobile app is public, however
   obfuscated. If you need Bible text in a client app, proxy through your own backend.
-- **Use environment variables**, not literals in source. Both SDKs read
-  `BIBLEQL_API_KEY` if you pass it explicitly from `ENV` / `process.env`.
+- **Use environment variables**, not literals in source. The Ruby and Node SDKs read
+  `BIBLEQL_API_KEY` if you pass it explicitly from `ENV` / `process.env`; the Python client
+  reads it automatically when no `api_key` is given.
 - **Never commit it.** Add `.env` to `.gitignore` before the first commit, not after.
 - **Use a `bql_test_` key in development** so a leak from a laptop or CI log cannot spend
   your production quota.

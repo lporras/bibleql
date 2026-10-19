@@ -157,6 +157,8 @@ const config: Config = {
             { label: "bibleql-ruby (RubyGems)", href: "https://rubygems.org/gems/bibleql-ruby" },
             { label: "bibleql-js (GitHub)", href: "https://github.com/lporras/bibleql-js" },
             { label: "bibleql-js (npm)", href: "https://www.npmjs.com/package/bibleql-js" },
+            { label: "bibleql-python (GitHub)", href: "https://github.com/lporras/bibleql-python" },
+            { label: "bibleql (PyPI)", href: "https://pypi.org/project/bibleql/" },
           ],
         },
       ],
@@ -165,7 +167,7 @@ const config: Config = {
     prism: {
       theme: prismThemes.github,
       darkTheme: prismThemes.dracula,
-      additionalLanguages: ["graphql", "ruby", "bash", "json"],
+      additionalLanguages: ["graphql", "ruby", "python", "bash", "json"],
     },
   } satisfies Preset.ThemeConfig,
 };

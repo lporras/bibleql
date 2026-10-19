@@ -60,8 +60,9 @@ La key te identifica y consume tu cuota. Trátala como una contraseña.
 - **Mantenla en el servidor.** Todo lo que se envía a un navegador o a una app móvil es
   público, por más ofuscado que esté. Si necesitas texto bíblico en una app cliente, hazlo
   pasar por tu propio backend.
-- **Usa variables de entorno**, no literales en el código. Ambos SDKs leen la key que les
-  pases desde `ENV` / `process.env`.
+- **Usa variables de entorno**, no literales en el código. Los SDKs de Ruby y Node leen la key
+  que les pases desde `ENV` / `process.env`; el cliente de Python lee `BIBLEQL_API_KEY`
+  automáticamente si no le pasas `api_key`.
 - **Nunca la subas al repositorio.** Añade `.env` a `.gitignore` antes del primer commit, no
   después.
 - **Usa una key `bql_test_` en desarrollo** para que una filtración desde un portátil o desde

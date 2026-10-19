@@ -2,20 +2,21 @@
 id: index
 title: SDKs
 sidebar_position: 1
-description: Clientes oficiales de BibleQL para Ruby y Node.js, y qué cubre cada uno.
+description: Clientes oficiales de BibleQL para Ruby, Node.js y Python, y qué cubre cada uno.
 ---
 
 import { SDK, SDK_EXAMPLES_REPO } from "@site/src/constants";
 
 # SDKs
 
-Dos clientes oficiales envuelven la API para que puedas llamar métodos en lugar de escribir
-GraphQL. Ambos tienen licencia MIT y están publicados.
+Tres clientes oficiales envuelven la API para que puedas llamar métodos en lugar de escribir
+GraphQL. Los tres tienen licencia MIT y están publicados.
 
 | Lenguaje | Paquete | Código |
 |---|---|---|
 | Ruby | <a href={SDK.ruby.registry}><code>bibleql-ruby</code> en RubyGems</a> | <a href={SDK.ruby.repo}>lporras/bibleql-ruby</a> |
 | Node.js / TypeScript | <a href={SDK.node.registry}><code>bibleql-js</code> en npm</a> | <a href={SDK.node.repo}>lporras/bibleql-js</a> |
+| Python | <a href={SDK.python.registry}><code>bibleql</code> en PyPI</a> | <a href={SDK.python.repo}>lporras/bibleql-python</a> |
 
 ```ruby title="Gemfile"
 gem "bibleql-ruby"
@@ -25,38 +26,43 @@ gem "bibleql-ruby"
 npm install bibleql-js
 ```
 
+```bash title="pip"
+pip install bibleql
+```
+
 Después consulta [Configurar los SDKs](/sdks/configuration) para saber dónde inicializar el
 cliente.
 
-También existe un <a href={SDK_EXAMPLES_REPO}>repositorio de ejemplos</a> que muestra ambos en
-uso.
+También existe un <a href={SDK_EXAMPLES_REPO}>repositorio de ejemplos</a> que muestra los
+clientes de Ruby y Node en uso.
 
 ## Cobertura
 
-Ninguno de los dos cubre todavía el esquema completo. Donde falte un método, usa la forma
-GraphQL o cURL: todos los ejemplos de este sitio muestran ambas.
+Ningún SDK cubre todavía el esquema completo. Donde falte un método, usa la forma GraphQL o
+cURL: todos los ejemplos de este sitio muestran ambas.
 
-| Query | Ruby | Node.js |
-|---|---|---|
-| `translations` | ✅ | ✅ |
-| `translation` | ✅ | ✅ |
-| `books` | ✅ | ✅ |
-| `languages` | ✅ | ✅ |
-| `passage` | ✅ | ✅ |
-| `chapter` | ✅ | ✅ |
-| `verse` | ✅ | ✅ |
-| `randomVerse` | ✅ | ✅ |
-| `search` | ✅ | ✅ |
-| `verseOfTheDay` | ✅ | ✅ |
-| `bibleIndex` | ✅ | ✅ |
-| `semanticSearch` | ❌ | ✅ |
-| `concordance` | ❌ | ❌ |
-| `concordanceIndex` | ❌ | ❌ |
+| Query | Ruby | Node.js | Python |
+|---|---|---|---|
+| `translations` | ✅ | ✅ | ✅ |
+| `translation` | ✅ | ✅ | ✅ |
+| `books` | ✅ | ✅ | ✅ |
+| `languages` | ✅ | ✅ | ✅ |
+| `passage` | ✅ | ✅ | ✅ |
+| `chapter` | ✅ | ✅ | ✅ |
+| `verse` | ✅ | ✅ | ✅ |
+| `randomVerse` | ✅ | ✅ | ✅ |
+| `search` | ✅ | ✅ | ✅ |
+| `verseOfTheDay` | ✅ | ✅ | ✅ |
+| `bibleIndex` | ✅ | ✅ | ✅ |
+| `semanticSearch` | ❌ | ✅ | ✅ |
+| `concordance` | ❌ | ❌ | ✅ |
+| `concordanceIndex` | ❌ | ❌ | ✅ |
 
-La familia de concordancia todavía no está en ninguno de los dos clientes.
-[Concordancia](/guides/concordance) muestra el GraphQL directamente.
+Por ahora la familia de concordancia solo está en el cliente de Python.
+[Concordancia](/guides/concordance) muestra el GraphQL directamente. Los paquetes offline
+todavía no están en ningún cliente.
 
-## Ambos son solo para servidor
+## Todos son solo para servidor
 
 :::danger Nunca envíes una API key a un navegador
 `bibleql-js` está hecho para Node.js y su README dice explícitamente que no se use en código de
@@ -69,23 +75,24 @@ reenvía el resultado.
 
 ## Errores tipados
 
-Ambos mapean los fallos de la API a clases de excepción, así que puedes ramificar por tipo en
-lugar de analizar mensajes:
+Los tres mapean los fallos de la API a clases de excepción, así que puedes ramificar por tipo
+en lugar de analizar mensajes:
 
-| Condición | Ruby | Node.js |
-|---|---|---|
-| Key inválida | `BibleQL::AuthenticationError` | `AuthenticationError` |
-| Límite superado | `BibleQL::RateLimitError` | `RateLimitError` |
-| No encontrado | `BibleQL::NotFoundError` | `NotFoundError` |
-| Error del servidor | `BibleQL::ServerError` | `ServerError` |
-| Tiempo de espera | `BibleQL::TimeoutError` | `TimeoutError` |
-| Fallo de red | `BibleQL::ConnectionError` | `ConnectionError` |
-| Error de GraphQL | `BibleQL::QueryError` | `QueryError` |
+| Condición | Ruby | Node.js | Python |
+|---|---|---|---|
+| Key inválida | `BibleQL::AuthenticationError` | `AuthenticationError` | `bibleql.AuthenticationError` |
+| Límite superado | `BibleQL::RateLimitError` | `RateLimitError` | `bibleql.RateLimitError` |
+| No encontrado | `BibleQL::NotFoundError` | `NotFoundError` | `bibleql.NotFoundError` |
+| Error del servidor | `BibleQL::ServerError` | `ServerError` | `bibleql.ServerError` |
+| Tiempo de espera | `BibleQL::TimeoutError` | `TimeoutError` | `bibleql.RequestTimeoutError` |
+| Fallo de red | `BibleQL::ConnectionError` | `ConnectionError` | `bibleql.NetworkError` |
+| Error de GraphQL | `BibleQL::QueryError` | `QueryError` | `bibleql.QueryError` |
 
 Consulta [Errores](/reference/errors) para el formato subyacente.
 
 :::warning Revisa el endpoint por defecto
-Ambos SDKs apuntan por defecto a una URL alojada en Render en lugar de a
-`https://bibleql.org/graphql`. Si quieres fijar el endpoint canónico, configúralo
-explícitamente: `api_url` en Ruby, `apiUrl` en Node. La página de cada SDK muestra cómo.
+Los SDKs de Ruby y Node apuntan por defecto a una URL alojada en Render en lugar de a
+`https://bibleql.org/graphql`. El cliente de Python ya usa bibleql.org por defecto. Si quieres
+fijar el endpoint canónico, configúralo explícitamente: `api_url` en Ruby, `apiUrl` en Node. La
+página de cada SDK muestra cómo.
 :::

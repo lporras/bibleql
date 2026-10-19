@@ -13,6 +13,7 @@ import {
   SDK,
   SDK_SETUP,
   type DocsLocale,
+  type SdkName,
 } from "@site/src/constants";
 
 interface ApiExampleProps {
@@ -21,7 +22,7 @@ interface ApiExampleProps {
   /** Override the locale's default translation for this one example. */
   translation?: string;
   /**
-   * Omit the client-setup preamble from the Ruby and Node tabs. Use on pages that
+   * Omit the client-setup preamble from the SDK tabs. Use on pages that
    * already showed the setup just above the example.
    */
   noSetup?: boolean;
@@ -52,7 +53,7 @@ function toCurl(graphql: string): string {
   ].join("\n");
 }
 
-function UnsupportedInSdk({ sdk }: { sdk: "ruby" | "node" }) {
+function UnsupportedInSdk({ sdk }: { sdk: SdkName }) {
   const { name, repo } = SDK[sdk];
 
   const title = translate(
@@ -113,7 +114,7 @@ export default function ApiExample({
   const curl = toCurl(graphql);
 
   // Prepend client setup so each SDK snippet runs as pasted.
-  const withSetup = (snippet: string, sdk: "ruby" | "node") =>
+  const withSetup = (snippet: string, sdk: SdkName) =>
     noSetup ? snippet : `${SDK_SETUP[sdk]}\n\n${snippet}`;
 
   return (
@@ -143,6 +144,16 @@ export default function ApiExample({
           </CodeBlock>
         ) : (
           <UnsupportedInSdk sdk="node" />
+        )}
+      </TabItem>
+
+      <TabItem value="python" label="Python">
+        {example.python ? (
+          <CodeBlock language="python">
+            {withSetup(substitute(example.python, values), "python")}
+          </CodeBlock>
+        ) : (
+          <UnsupportedInSdk sdk="python" />
         )}
       </TabItem>
 
