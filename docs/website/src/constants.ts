@@ -29,16 +29,27 @@ export const SDK = {
     registryName: "npm",
     install: "npm install bibleql-js",
   },
+  python: {
+    name: "bibleql",
+    language: "Python",
+    repo: "https://github.com/lporras/bibleql-python",
+    registry: "https://pypi.org/project/bibleql/",
+    registryName: "PyPI",
+    install: "pip install bibleql",
+  },
 } as const;
+
+export type SdkName = keyof typeof SDK;
 
 export const SDK_EXAMPLES_REPO = "https://github.com/lporras/bibleql-example";
 
 /**
- * Client setup prepended to every rendered Ruby and Node example, so each snippet
- * is runnable as pasted instead of assuming a `client` from nowhere.
+ * Client setup prepended to every rendered SDK example, so each snippet is runnable
+ * as pasted instead of assuming a `client` from nowhere.
  *
- * `apiUrl` is set explicitly because both SDKs currently default to a
- * Render-hosted host rather than bibleql.org. See sdks/configuration.
+ * `apiUrl` is set explicitly for Ruby and Node because those SDKs currently default
+ * to a Render-hosted host rather than bibleql.org. Python already defaults to
+ * bibleql.org, but sets it too so all three setups read the same. See sdks/configuration.
  */
 export const SDK_SETUP = {
   ruby: `require "bibleql"
@@ -53,6 +64,14 @@ const client = new BibleQLClient({
   apiKey: process.env.BIBLEQL_API_KEY!,
   apiUrl: "${GRAPHQL_ENDPOINT}",
 });`,
+  python: `import os
+
+import bibleql
+
+client = bibleql.Client(
+    api_key=os.environ["BIBLEQL_API_KEY"],
+    api_url="${GRAPHQL_ENDPOINT}",
+)`,
 } as const;
 
 /** Verified against config/initializers/rack_attack.rb. */

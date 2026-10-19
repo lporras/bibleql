@@ -1,0 +1,234 @@
+---
+id: python
+title: Python
+sidebar_position: 4
+description: Using the bibleql package from Python.
+---
+
+import { SDK } from "@site/src/constants";
+
+# Python
+
+A typed Python client for BibleQL. Requires Python 3.10 or newer.
+
+- **Package:** <a href={SDK.python.registry}>`bibleql` on PyPI</a>
+- **Source:** <a href={SDK.python.repo}>github.com/lporras/bibleql-python</a>
+- **License:** MIT
+
+## Install
+
+```bash
+pip install bibleql
+```
+
+## Configure
+
+```python
+import bibleql
+
+client = bibleql.Client(
+    api_key="bql_live_...",  # or omit it and set BIBLEQL_API_KEY
+    default_translation="eng-web",
+    timeout=30,  # seconds
+)
+```
+
+If `api_key` is omitted, the client reads the `BIBLEQL_API_KEY` environment variable, and
+raises `bibleql.ConfigurationError` if neither is set:
+
+```python
+client = bibleql.Client()
+```
+
+Unlike the Ruby and Node packages, `api_url` already defaults to `https://bibleql.org/graphql`,
+so there is nothing to pin.
+
+The client holds an HTTP connection pool. Use it as a context manager, or call
+`client.close()` when you are done:
+
+```python
+with bibleql.Client() as client:
+    print(client.passage("John 3:16").text)
+```
+
+The library never reads `.env` files itself. If you keep the key in one, load it first — for
+example with `dotenv.load_dotenv()` from [python-dotenv](https://pypi.org/project/python-dotenv/).
+
+For where to initialize the client in an application, see
+[Configuring the SDKs](/sdks/configuration).
+
+The examples below all assume a `client` built as above.
+
+## Reading passages
+
+```python
+passage = client.passage("John 3:16")
+
+passage.reference       # "John 3:16"
+passage.text            # "For God so loved the world..."
+passage.translation_id  # "eng-web"
+passage.verses          # [Verse(book_id='JHN', book_name='John', chapter=3, verse=16, text='...')]
+
+# Per-call translation
+client.passage("Juan 3:16", translation="spa-rv1909")
+```
+
+## Verses and chapters
+
+```python
+verse = client.verse("MAT", 5, 3)
+verse.book_name  # "Matthew"
+verse.chapter    # 5
+verse.verse      # 3
+verse.text
+
+verses = client.chapter("MAT", 5)  # list[Verse]
+```
+
+## Search
+
+```python
+for verse in client.search("love", limit=5):
+    print(f"{verse.book_name} {verse.chapter}:{verse.verse}")
+    print(verse.text)
+```
+
+Substring matching, not stemming — see [Searching the Bible](/guides/search).
+
+## Semantic search
+
+```python
+for result in client.semantic_search("fe y esperanza", limit=5):
+    print(f"{result.similarity:.2f}", result.verse.text)
+```
+
+Unlike every other method, `semantic_search` does **not** fall back to `default_translation`
+when `translation` is omitted: it lets the API pick its default, `spa-rv1909`, which is the only
+translation with embeddings. See [Semantic Search](/guides/semantic-search).
+
+## Random verse
+
+```python
+client.random_verse()
+client.random_verse(testament="NT")         # "OT" or "NT"
+client.random_verse(books=["PSA", "PRO"])   # or books="PSA,PRO"
+```
+
+Passing `books` makes `testament` be ignored — see
+[API Behavior](/reference/api-behavior#filters-compose-differently-in-different-queries).
+
+## Verse of the day
+
+```python
+import datetime
+
+client.verse_of_the_day()
+client.verse_of_the_day(date=datetime.date(2026, 1, 1))  # or date="2026-01-01"
+```
+
+Returns a `Passage`, which may hold more than one verse.
+
+## Concordance
+
+The Python client is currently the only SDK that covers the concordance queries. See
+[Concordance](/guides/concordance) for what the fields mean.
+
+```python
+page = client.concordance("misericordia", translation="spa-rv1909", first=10)
+
+page.total_count                       # occurrences matching the filters
+page.entry.surface_forms               # ["misericordia", "misericordias", ...]
+page.entry.occurrences_by_testament    # TestamentCount(old=327, new=71)
+
+for occurrence in page.occurrences:
+    print(occurrence.verse.book_name, occurrence.context)  # context has <mark> tags
+```
+
+The GraphQL connection (`edges` / `node` / `pageInfo`) is flattened into `occurrences`,
+`has_next_page` and `end_cursor`. Fetch the next page with the cursor, or let the client walk
+every page lazily:
+
+```python
+if page.has_next_page:
+    page = client.concordance("misericordia", translation="spa-rv1909", after=page.end_cursor)
+
+for occurrence in client.iter_concordance("misericordia", translation="spa-rv1909"):
+    ...
+```
+
+Filter by book (localized names work) or testament:
+
+```python
+client.concordance("misericordia", translation="spa-rv1909", book="Salmos")
+client.concordance("misericordia", translation="spa-rv1909", testament=bibleql.Testament.NEW)
+```
+
+And the alphabetical word-frequency index:
+
+```python
+client.concordance_index(translation="spa-rv1909", prefix="mis", min_occurrences=5)
+```
+
+:::warning Sanitize `context`
+`context` contains `<mark>` HTML around the match. Sanitize it before rendering it as HTML.
+:::
+
+## Discovery
+
+```python
+client.translations()            # list[Translation]
+client.translation("eng-web")    # with .books
+client.languages()               # .code, .translation_count, .translations
+client.books()                   # the 66 canonical books
+client.bible_index()             # .chapters -> [Chapter(number=1, verse_count=31, ...)]
+```
+
+## Models
+
+Every result is an immutable dataclass with snake_case attributes. To get a dict:
+
+```python
+import dataclasses
+
+dataclasses.asdict(client.verse("JHN", 3, 16))
+```
+
+## Error handling
+
+```python
+try:
+    client.passage("Nonexistent 1:1")
+except bibleql.NotFoundError as e:
+    print(f"Not found: {e}")
+except bibleql.AuthenticationError:
+    print("Check BIBLEQL_API_KEY")
+except bibleql.RateLimitError:
+    print("Rate limited — back off")
+except bibleql.NetworkError as e:  # includes RequestTimeoutError
+    print(f"Transient network problem: {e}")
+except bibleql.QueryError as e:
+    print(f"GraphQL error: {e}")
+    print(e.errors)  # the raw error list
+```
+
+The hierarchy:
+
+```text
+BibleQLError
+├── ConfigurationError        no API key
+├── NetworkError              no response (DNS, connection refused, ...)
+│   └── RequestTimeoutError
+├── APIError (.status, .body) non-2xx HTTP response
+│   ├── AuthenticationError     401
+│   ├── RateLimitError          429
+│   └── ServerError             5xx
+└── QueryError (.errors)      GraphQL errors in the response
+    └── NotFoundError
+```
+
+See [Errors](/reference/errors) for what each maps to on the wire.
+
+## Not covered by the package
+
+Offline packages (`offlineDownloadable`, `offlinePackage`) have no methods. Use the GraphQL
+document from [Offline Packages](/guides/offline-packages) with any HTTP client.

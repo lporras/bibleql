@@ -1,0 +1,235 @@
+---
+id: python
+title: Python
+sidebar_position: 4
+description: Usar el paquete bibleql desde Python.
+---
+
+import { SDK } from "@site/src/constants";
+
+# Python
+
+Un cliente tipado de Python para BibleQL. Requiere Python 3.10 o superior.
+
+- **Paquete:** <a href={SDK.python.registry}>`bibleql` en PyPI</a>
+- **Código:** <a href={SDK.python.repo}>github.com/lporras/bibleql-python</a>
+- **Licencia:** MIT
+
+## Instalación
+
+```bash
+pip install bibleql
+```
+
+## Configuración
+
+```python
+import bibleql
+
+client = bibleql.Client(
+    api_key="bql_live_...",  # u omítela y define BIBLEQL_API_KEY
+    default_translation="spa-rv1909",
+    timeout=30,  # segundos
+)
+```
+
+Si omites `api_key`, el cliente lee la variable de entorno `BIBLEQL_API_KEY`, y lanza
+`bibleql.ConfigurationError` si no hay ninguna de las dos:
+
+```python
+client = bibleql.Client()
+```
+
+A diferencia de los paquetes de Ruby y Node, `api_url` ya apunta por defecto a
+`https://bibleql.org/graphql`, así que no hace falta fijarlo.
+
+El cliente mantiene un pool de conexiones HTTP. Úsalo como context manager, o llama a
+`client.close()` al terminar:
+
+```python
+with bibleql.Client() as client:
+    print(client.passage("Juan 3:16", translation="spa-rv1909").text)
+```
+
+La librería nunca lee archivos `.env` por sí misma. Si guardas la key en uno, cárgalo antes —
+por ejemplo con `dotenv.load_dotenv()` de [python-dotenv](https://pypi.org/project/python-dotenv/).
+
+Para saber dónde inicializar el cliente en una aplicación, consulta
+[Configurar los SDKs](/sdks/configuration).
+
+Los ejemplos siguientes asumen un `client` creado como arriba.
+
+## Leer pasajes
+
+```python
+passage = client.passage("Juan 3:16")
+
+passage.reference       # "Juan 3:16"
+passage.text            # "Porque de tal manera amó Dios al mundo..."
+passage.translation_id  # "spa-rv1909"
+passage.verses          # [Verse(book_id='JHN', book_name='Juan', chapter=3, verse=16, text='...')]
+
+# Traducción por llamada
+client.passage("John 3:16", translation="eng-web")
+```
+
+## Versículos y capítulos
+
+```python
+verse = client.verse("MAT", 5, 3)
+verse.book_name  # "Mateo"
+verse.chapter    # 5
+verse.verse      # 3
+verse.text
+
+verses = client.chapter("MAT", 5)  # list[Verse]
+```
+
+## Búsqueda
+
+```python
+for verse in client.search("amor", limit=5):
+    print(f"{verse.book_name} {verse.chapter}:{verse.verse}")
+    print(verse.text)
+```
+
+Es coincidencia de subcadenas, no stemming — consulta [Buscar en la Biblia](/guides/search).
+
+## Búsqueda semántica
+
+```python
+for result in client.semantic_search("fe y esperanza", limit=5):
+    print(f"{result.similarity:.2f}", result.verse.text)
+```
+
+A diferencia de los demás métodos, `semantic_search` **no** usa `default_translation` cuando
+omites `translation`: deja que la API elija su valor por defecto, `spa-rv1909`, que es la única
+traducción con embeddings. Consulta [Búsqueda semántica](/guides/semantic-search).
+
+## Versículo aleatorio
+
+```python
+client.random_verse()
+client.random_verse(testament="NT")         # "OT" o "NT"
+client.random_verse(books=["PSA", "PRO"])   # o books="PSA,PRO"
+```
+
+Si pasas `books`, `testament` se ignora — consulta
+[Comportamiento de la API](/reference/api-behavior#los-filtros-se-combinan-de-forma-distinta-según-la-query).
+
+## Versículo del día
+
+```python
+import datetime
+
+client.verse_of_the_day()
+client.verse_of_the_day(date=datetime.date(2026, 1, 1))  # o date="2026-01-01"
+```
+
+Devuelve un `Passage`, que puede contener más de un versículo.
+
+## Concordancia
+
+Por ahora el cliente de Python es el único SDK que cubre las queries de concordancia. Consulta
+[Concordancia](/guides/concordance) para el significado de cada campo.
+
+```python
+page = client.concordance("misericordia", translation="spa-rv1909", first=10)
+
+page.total_count                       # apariciones que cumplen los filtros
+page.entry.surface_forms               # ["misericordia", "misericordias", ...]
+page.entry.occurrences_by_testament    # TestamentCount(old=327, new=71)
+
+for occurrence in page.occurrences:
+    print(occurrence.verse.book_name, occurrence.context)  # context lleva etiquetas <mark>
+```
+
+La conexión GraphQL (`edges` / `node` / `pageInfo`) se aplana en `occurrences`,
+`has_next_page` y `end_cursor`. Pide la página siguiente con el cursor, o deja que el cliente
+recorra todas las páginas de forma perezosa:
+
+```python
+if page.has_next_page:
+    page = client.concordance("misericordia", translation="spa-rv1909", after=page.end_cursor)
+
+for occurrence in client.iter_concordance("misericordia", translation="spa-rv1909"):
+    ...
+```
+
+Filtra por libro (acepta nombres localizados) o por testamento:
+
+```python
+client.concordance("misericordia", translation="spa-rv1909", book="Salmos")
+client.concordance("misericordia", translation="spa-rv1909", testament=bibleql.Testament.NEW)
+```
+
+Y el índice alfabético de frecuencias:
+
+```python
+client.concordance_index(translation="spa-rv1909", prefix="mis", min_occurrences=5)
+```
+
+:::warning Sanea `context`
+`context` contiene HTML `<mark>` alrededor de la coincidencia. Sanéalo antes de mostrarlo como
+HTML.
+:::
+
+## Descubrimiento
+
+```python
+client.translations()               # list[Translation]
+client.translation("spa-rv1909")    # con .books
+client.languages()                  # .code, .translation_count, .translations
+client.books()                      # los 66 libros canónicos
+client.bible_index()                # .chapters -> [Chapter(number=1, verse_count=31, ...)]
+```
+
+## Modelos
+
+Cada resultado es un dataclass inmutable con atributos en snake_case. Para obtener un dict:
+
+```python
+import dataclasses
+
+dataclasses.asdict(client.verse("JHN", 3, 16))
+```
+
+## Manejo de errores
+
+```python
+try:
+    client.passage("Inexistente 1:1")
+except bibleql.NotFoundError as e:
+    print(f"No encontrado: {e}")
+except bibleql.AuthenticationError:
+    print("Revisa BIBLEQL_API_KEY")
+except bibleql.RateLimitError:
+    print("Límite superado — espera antes de reintentar")
+except bibleql.NetworkError as e:  # incluye RequestTimeoutError
+    print(f"Problema de red transitorio: {e}")
+except bibleql.QueryError as e:
+    print(f"Error de GraphQL: {e}")
+    print(e.errors)  # la lista de errores tal cual
+```
+
+La jerarquía:
+
+```text
+BibleQLError
+├── ConfigurationError        sin API key
+├── NetworkError              sin respuesta (DNS, conexión rechazada, ...)
+│   └── RequestTimeoutError
+├── APIError (.status, .body) respuesta HTTP no 2xx
+│   ├── AuthenticationError     401
+│   ├── RateLimitError          429
+│   └── ServerError             5xx
+└── QueryError (.errors)      errores de GraphQL en la respuesta
+    └── NotFoundError
+```
+
+Consulta [Errores](/reference/errors) para ver a qué corresponde cada uno en la respuesta.
+
+## Lo que no cubre el paquete
+
+Los paquetes offline (`offlineDownloadable`, `offlinePackage`) no tienen métodos. Usa el
+documento GraphQL de [Paquetes offline](/guides/offline-packages) con cualquier cliente HTTP.

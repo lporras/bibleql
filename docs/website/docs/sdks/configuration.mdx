@@ -11,26 +11,28 @@ import { GRAPHQL_ENDPOINT } from "@site/src/constants";
 
 # Configuring the SDKs
 
-Both clients can be configured globally once, or per instance. This page covers where that
-initialization belongs and which options you should set rather than inherit.
+The Ruby and Node clients can be configured globally once, or per instance; the Python client
+is always per instance. This page covers where that initialization belongs and which options
+you should set rather than inherit.
 
 ## Settings
 
-Both SDKs accept the same four things, under language-appropriate names.
+All three SDKs accept the same four things, under language-appropriate names.
 
-| Setting | Ruby | Node.js | Default |
-|---|---|---|---|
-| API key | `api_key` | `apiKey` | none — required |
-| Endpoint | `api_url` | `apiUrl` | a Render-hosted URL, **not** bibleql.org |
-| Fallback translation | `default_translation` | `defaultTranslation` | `eng-web` |
-| Timeout | `timeout` (seconds) | `timeout` (milliseconds) | 30s / 30000ms |
+| Setting | Ruby | Node.js | Python | Default |
+|---|---|---|---|---|
+| API key | `api_key` | `apiKey` | `api_key` | none — required (Python falls back to `BIBLEQL_API_KEY`) |
+| Endpoint | `api_url` | `apiUrl` | `api_url` | Ruby/Node: a Render-hosted URL, **not** bibleql.org. Python: <code>{GRAPHQL_ENDPOINT}</code> |
+| Fallback translation | `default_translation` | `defaultTranslation` | `default_translation` | `eng-web` |
+| Timeout | `timeout` (seconds) | `timeout` (milliseconds) | `timeout` (seconds) | 30s / 30000ms / 30s |
 
-Note the timeout unit differs between the two.
+Note the timeout unit is milliseconds in Node and seconds in the other two.
 
-:::warning Always set the endpoint explicitly
-Both SDKs currently default `api_url` / `apiUrl` to a Render-hosted hostname rather than
+:::warning Always set the endpoint explicitly in Ruby and Node
+Those SDKs currently default `api_url` / `apiUrl` to a Render-hosted hostname rather than
 <code>{GRAPHQL_ENDPOINT}</code>. If you leave it unset, your traffic goes somewhere other than
-the canonical endpoint. Pin it in your initializer.
+the canonical endpoint. Pin it in your initializer. The Python client already defaults to the
+canonical endpoint.
 :::
 
 ## Where to initialize
@@ -173,12 +175,69 @@ and reused across invocations on that instance — which is what you want. Just 
 comes from the platform's secret store, not a bundled file.
 
 </TabItem>
+<TabItem value="python" label="Python">
+
+There is no global configuration: build a `bibleql.Client`. In a script, use it as a context
+manager so its HTTP connection pool is closed when you are done:
+
+```python
+import bibleql
+
+with bibleql.Client() as client:  # reads BIBLEQL_API_KEY
+    print(client.passage("John 3:16").text)
+```
+
+In an application, create one client in a module and import it everywhere, so connections are
+reused across requests:
+
+```python title="app/bibleql_client.py"
+import os
+
+import bibleql
+
+bibleql_client = bibleql.Client(
+    api_key=os.environ["BIBLEQL_API_KEY"],
+    default_translation="eng-web",
+    timeout=30,
+)
+```
+
+```python
+from app.bibleql_client import bibleql_client
+
+passage = bibleql_client.passage("John 3:16")
+```
+
+`os.environ["BIBLEQL_API_KEY"]` fails loudly at import time if the key is missing. If you omit
+`api_key`, the client reads the same variable and raises `bibleql.ConfigurationError` instead.
+
+### Django, Flask, FastAPI
+
+The module-level client above works in all three. Call `bibleql_client.close()` from your
+framework's shutdown hook — FastAPI's `lifespan`, for example — if you want to release
+connections cleanly.
+
+### `.env` files
+
+The library never reads `.env` files itself. Load them before creating the client, for example
+with [python-dotenv](https://pypi.org/project/python-dotenv/):
+
+```python
+from dotenv import load_dotenv
+
+load_dotenv()
+client = bibleql.Client()
+```
+
+</TabItem>
 </Tabs>
 
 ## Choosing a default translation
 
 `default_translation` / `defaultTranslation` only applies when a call omits the translation. It
-does not restrict anything — any call can pass a different one.
+does not restrict anything — any call can pass a different one. (Python's `semantic_search` is
+the one exception: it ignores the default and lets the API choose a translation with
+embeddings.)
 
 Set it to whatever your application shows most often. If you serve several languages, prefer
 passing `translation` explicitly at each call site so the behaviour does not depend on
@@ -212,6 +271,14 @@ puts "#{translations.size} translations available"
 ```typescript
 const translations = await bibleql.translations();
 console.log(`${translations.length} translations available`);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+translations = bibleql_client.translations()
+print(f"{len(translations)} translations available")
 ```
 
 </TabItem>

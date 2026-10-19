@@ -11,26 +11,28 @@ import { GRAPHQL_ENDPOINT } from "@site/src/constants";
 
 # Configurar los SDKs
 
-Ambos clientes se pueden configurar una vez de forma global, o por instancia. Esta página
-explica dónde va esa inicialización y qué opciones deberías fijar en lugar de heredar.
+Los clientes de Ruby y Node se pueden configurar una vez de forma global, o por instancia; el
+de Python siempre es por instancia. Esta página explica dónde va esa inicialización y qué
+opciones deberías fijar en lugar de heredar.
 
 ## Opciones
 
-Ambos SDKs aceptan las mismas cuatro cosas, con nombres propios de cada lenguaje.
+Los tres SDKs aceptan las mismas cuatro cosas, con nombres propios de cada lenguaje.
 
-| Opción | Ruby | Node.js | Por defecto |
-|---|---|---|---|
-| API key | `api_key` | `apiKey` | ninguna — obligatoria |
-| Endpoint | `api_url` | `apiUrl` | una URL alojada en Render, **no** bibleql.org |
-| Traducción de respaldo | `default_translation` | `defaultTranslation` | `eng-web` |
-| Tiempo de espera | `timeout` (segundos) | `timeout` (milisegundos) | 30s / 30000ms |
+| Opción | Ruby | Node.js | Python | Por defecto |
+|---|---|---|---|---|
+| API key | `api_key` | `apiKey` | `api_key` | ninguna — obligatoria (Python recurre a `BIBLEQL_API_KEY`) |
+| Endpoint | `api_url` | `apiUrl` | `api_url` | Ruby/Node: una URL alojada en Render, **no** bibleql.org. Python: <code>{GRAPHQL_ENDPOINT}</code> |
+| Traducción de respaldo | `default_translation` | `defaultTranslation` | `default_translation` | `eng-web` |
+| Tiempo de espera | `timeout` (segundos) | `timeout` (milisegundos) | `timeout` (segundos) | 30s / 30000ms / 30s |
 
-Fíjate en que la unidad del tiempo de espera es distinta entre ambos.
+Fíjate en que el tiempo de espera va en milisegundos en Node y en segundos en los otros dos.
 
-:::warning Fija siempre el endpoint explícitamente
-Ambos SDKs apuntan hoy por defecto a un host alojado en Render en lugar de a
+:::warning Fija siempre el endpoint explícitamente en Ruby y Node
+Esos SDKs apuntan hoy por defecto a un host alojado en Render en lugar de a
 <code>{GRAPHQL_ENDPOINT}</code>. Si lo dejas sin configurar, tu tráfico va a otro sitio que no
-es el endpoint canónico. Fíjalo en tu inicializador.
+es el endpoint canónico. Fíjalo en tu inicializador. El cliente de Python ya usa el endpoint
+canónico por defecto.
 :::
 
 ## Dónde inicializar
@@ -176,12 +178,69 @@ instancia, que es lo que quieres. Solo asegúrate de que la key venga del almac�
 de la plataforma y no de un archivo empaquetado.
 
 </TabItem>
+<TabItem value="python" label="Python">
+
+No hay configuración global: crea un `bibleql.Client`. En un script, úsalo como context manager
+para que su pool de conexiones HTTP se cierre al terminar:
+
+```python
+import bibleql
+
+with bibleql.Client() as client:  # lee BIBLEQL_API_KEY
+    print(client.passage("Juan 3:16", translation="spa-rv1909").text)
+```
+
+En una aplicación, crea un único cliente en un módulo e impórtalo donde lo necesites, para que
+las conexiones se reutilicen entre peticiones:
+
+```python title="app/bibleql_client.py"
+import os
+
+import bibleql
+
+bibleql_client = bibleql.Client(
+    api_key=os.environ["BIBLEQL_API_KEY"],
+    default_translation="spa-rv1909",
+    timeout=30,
+)
+```
+
+```python
+from app.bibleql_client import bibleql_client
+
+passage = bibleql_client.passage("Juan 3:16")
+```
+
+`os.environ["BIBLEQL_API_KEY"]` falla de forma ruidosa al importar si falta la key. Si omites
+`api_key`, el cliente lee la misma variable y lanza `bibleql.ConfigurationError`.
+
+### Django, Flask, FastAPI
+
+El cliente a nivel de módulo funciona en los tres. Llama a `bibleql_client.close()` desde el
+hook de apagado de tu framework —por ejemplo el `lifespan` de FastAPI— si quieres liberar las
+conexiones limpiamente.
+
+### Archivos `.env`
+
+La librería nunca lee archivos `.env` por sí misma. Cárgalos antes de crear el cliente, por
+ejemplo con [python-dotenv](https://pypi.org/project/python-dotenv/):
+
+```python
+from dotenv import load_dotenv
+
+load_dotenv()
+client = bibleql.Client()
+```
+
+</TabItem>
 </Tabs>
 
 ## Elegir una traducción por defecto
 
 `default_translation` / `defaultTranslation` solo se aplica cuando una llamada omite la
-traducción. No restringe nada: cualquier llamada puede pasar otra distinta.
+traducción. No restringe nada: cualquier llamada puede pasar otra distinta. (La única
+excepción es `semantic_search` en Python: ignora el valor por defecto y deja que la API elija
+una traducción con embeddings.)
 
 Configúrala con la que tu aplicación muestre más a menudo. Si sirves varios idiomas, es
 preferible pasar `translation` explícitamente en cada llamada, para que el comportamiento no
@@ -216,6 +275,14 @@ puts "#{translations.size} traducciones disponibles"
 ```typescript
 const translations = await bibleql.translations();
 console.log(`${translations.length} traducciones disponibles`);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+translations = bibleql_client.translations()
+print(f"{len(translations)} traducciones disponibles")
 ```
 
 </TabItem>

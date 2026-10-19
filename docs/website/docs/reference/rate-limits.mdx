@@ -84,9 +84,9 @@ The most effective measures, roughly in order of impact:
 On a `429`, sleep for `Retry-After` seconds and retry once. If you are running a batch job,
 add jitter so parallel workers do not all wake at the same instant.
 
-Both official SDKs raise a distinct error for this case — `BibleQL::RateLimitError` in Ruby and
-`RateLimitError` in Node — so you can catch it specifically rather than inspecting status
-codes. See [SDKs](/sdks).
+All official SDKs raise a distinct error for this case — `BibleQL::RateLimitError` in Ruby,
+`RateLimitError` in Node and `bibleql.RateLimitError` in Python — so you can catch it
+specifically rather than inspecting status codes. See [SDKs](/sdks).
 
 ## Query complexity is a separate ceiling
 

@@ -5,7 +5,7 @@ import type { SidebarsConfig } from "@docusaurus/plugin-content-docs";
  *
  *   docsSidebar  hand-written guides and reference prose
  *   apiSidebar   generated from the GraphQL schema — see api-reference/sidebar-schema.js
- *   sdkSidebar   the Ruby and Node.js client libraries
+ *   sdkSidebar   the Ruby, Node.js and Python client libraries
  */
 const sidebars: SidebarsConfig = {
   docsSidebar: [
@@ -56,7 +56,7 @@ const sidebars: SidebarsConfig = {
       type: "category",
       label: "SDKs",
       collapsed: false,
-      items: ["sdks/index", "sdks/configuration", "sdks/ruby", "sdks/node"],
+      items: ["sdks/index", "sdks/configuration", "sdks/ruby", "sdks/node", "sdks/python"],
     },
   ],
 };
