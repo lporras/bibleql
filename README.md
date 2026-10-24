@@ -1,6 +1,7 @@
 # BibleQL
 
 [![CI](https://github.com/lporras/bibleql/actions/workflows/ci.yml/badge.svg)](https://github.com/lporras/bibleql/actions/workflows/ci.yml)
+[![Security](https://github.com/lporras/bibleql/actions/workflows/security.yml/badge.svg)](https://github.com/lporras/bibleql/actions/workflows/security.yml)
 [![codecov](https://codecov.io/gh/lporras/bibleql/branch/main/graph/badge.svg)](https://codecov.io/gh/lporras/bibleql)
 [![Donate using Liberapay](https://img.shields.io/liberapay/receives/bibleql.svg?logo=liberapay)](https://liberapay.com/bibleql/donate)
 
