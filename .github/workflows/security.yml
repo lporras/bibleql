@@ -1,0 +1,92 @@
+name: Security
+
+on:
+  pull_request:
+  push:
+    branches: [ main ]
+  # Weekly, so newly published advisories surface even when nothing is merged.
+  schedule:
+    - cron: "23 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  # Results land in the repository's Security > Code scanning tab.
+  codeql:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        # javascript-typescript covers app/javascript and docs/website;
+        # actions covers the workflows themselves.
+        language: [ ruby, javascript-typescript, actions ]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: none
+          queries: security-extended
+
+      - name: Perform CodeQL analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{ matrix.language }}"
+
+  # ci.yml already gates PRs on Brakeman; this uploads the same scan as SARIF so
+  # warnings show up inline on PRs and in Code scanning alongside CodeQL.
+  brakeman:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@26e5b7d197ebf60545ee9667bcbace0be11ccaec # v1.334.0
+        with:
+          bundler-cache: true
+
+      - name: Run Brakeman
+        run: bin/brakeman --no-pager --no-exit-on-warn --no-exit-on-error -f sarif -o brakeman.sarif
+
+      - name: Upload Brakeman results
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: brakeman.sarif
+          category: brakeman
+
+  # The Rails app has no npm dependencies (importmap, audited in ci.yml); the
+  # Docusaurus site in docs/website is the only npm tree. Report-only for now:
+  # it warns instead of failing until the existing advisories are cleared.
+  npm_audit_docs:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: docs/website
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: Audit docs site dependencies
+        run: |
+          if ! npm audit --omit=dev --audit-level=high; then
+            echo "::warning file=docs/website/package-lock.json::npm audit found high/critical advisories in the docs site dependencies"
+          fi
