@@ -7,16 +7,15 @@ Rack::Attack.throttle("graphql/ip", limit: 100, period: 60.seconds) do |req|
   req.ip if req.path == "/graphql" && req.post?
 end
 
-# Throttle by API key: 1000 requests per day
-Rack::Attack.throttle("graphql/api_key", limit: 1000, period: 1.day) do |req|
-  if req.path == "/graphql" && req.post?
-    auth_header = req.env["HTTP_AUTHORIZATION"]
-    if auth_header&.start_with?("Bearer ")
-      token = auth_header.delete_prefix("Bearer ")
-      token[0, 12] # Use prefix as discriminator (avoids bcrypt at middleware level)
-    end
-  end
+# Throttle GraphQL requests without an Authorization header: 10 per hour per IP. The only
+# thing such a request can do is registerInstallation (see GraphqlController#registration_request?),
+# so this is the registration limit — the main way around per-key limits is minting new keys.
+Rack::Attack.throttle("graphql/unauthenticated/ip", limit: 10, period: 1.hour) do |req|
+  req.ip if req.path == "/graphql" && req.post? && req.env["HTTP_AUTHORIZATION"].blank?
 end
+
+# Per-API-key daily limits are enforced in GraphqlController (ApiKeyRateLimiter), since they
+# depend on the key's kind and deprecated flag.
 
 # Throttle API key request form: 5 submissions per hour per IP
 Rack::Attack.throttle("api_key_requests/ip", limit: 5, period: 1.hour) do |req|
@@ -40,6 +39,6 @@ Rack::Attack.throttled_responder = lambda do |req|
       "Content-Type" => "application/json",
       "Retry-After" => retry_after.to_s
     },
-    [ { errors: [ { message: "Rate limit exceeded. Retry after #{retry_after} seconds." } ] }.to_json ]
+    [ { errors: [ { message: "Rate limit exceeded. Retry after #{retry_after} seconds.", extensions: { code: "RATE_LIMITED", retryAfter: retry_after } } ] }.to_json ]
   ]
 end

@@ -9,7 +9,8 @@ import { RATE_LIMITS } from "@site/src/constants";
 
 # Límites de peticiones
 
-Se aplican tres límites. Todos se imponen en el borde, antes de interpretar tu query.
+Los límites por IP se imponen en el borde, antes de interpretar tu query. Los límites por key se
+comprueban justo después de autenticar la key, también antes de ejecutar la query.
 
 <table>
   <thead>
@@ -22,9 +23,14 @@ Se aplican tres límites. Todos se imponen en el borde, antes de interpretar tu 
       <td>por minuto</td>
     </tr>
     <tr>
-      <td>Peticiones GraphQL por API key</td>
+      <td>Peticiones GraphQL por API key (de desarrollador o de <a href="/getting-started/api-keys#installation-keys">instalación</a>)</td>
       <td>{RATE_LIMITS.graphqlPerKey.limit.toLocaleString("es-ES")}</td>
-      <td>por día</td>
+      <td>por día (UTC)</td>
+    </tr>
+    <tr>
+      <td>Peticiones sin API key (<code>registerInstallation</code>) por IP</td>
+      <td>{RATE_LIMITS.registrationPerIp.limit}</td>
+      <td>por hora</td>
     </tr>
     <tr>
       <td>Formulario de solicitud de API key por IP</td>
@@ -35,13 +41,14 @@ Se aplican tres límites. Todos se imponen en el borde, antes de interpretar tu 
 </table>
 
 Los límites por IP y por key son independientes: puedes agotar cualquiera de los dos. El
-endpoint de comprobación de salud está exento.
+endpoint de comprobación de salud está exento. El operador puede fijar un límite diario mayor o
+menor en una key concreta.
 
 ## Por key significa por key, no por servidor
 
-El límite por key se cuenta contra los **primeros 12 caracteres de tu token**, que son el
-prefijo de la key. Cada proceso, servidor y región que use la misma key comparte una única
-cuota diaria. Levantar diez instancias no te da diez veces la cuota.
+El límite por key se cuenta contra la propia key. Cada proceso, servidor y región que use la
+misma key comparte una única cuota diaria, que se reinicia a medianoche UTC. Levantar diez
+instancias no te da diez veces la cuota.
 
 Si necesitas cuotas aisladas para cargas de trabajo distintas, solicita keys separadas con
 direcciones de correo separadas — consulta
@@ -58,7 +65,12 @@ Retry-After: 37
 ```
 
 ```json
-{ "errors": [{ "message": "Rate limit exceeded. Retry after 37 seconds." }] }
+{
+  "errors": [{
+    "message": "Rate limit exceeded. Retry after 37 seconds.",
+    "extensions": { "code": "RATE_LIMITED", "retryAfter": 37 }
+  }]
+}
 ```
 
 `Retry-After` es el número de segundos hasta que la ventana actual se renueva. Respétalo en
@@ -66,7 +78,10 @@ lugar de reintentar de inmediato: reintentar dentro de la ventana no consume nad
 fallando.
 
 Las ventanas son fijas, no deslizantes: el contador por minuto se reinicia en el límite, así
-que `Retry-After` puede ser cualquier valor entre 1 y 60 segundos.
+que `Retry-After` puede ser cualquier valor entre 1 y 60 segundos. Para el límite diario por key
+es el tiempo que falta hasta la medianoche UTC.
+
+Decide según `extensions.code` (`RATE_LIMITED`) y no según el texto del mensaje, que puede cambiar.
 
 ## Mantenerse por debajo de los límites
 

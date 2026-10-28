@@ -1,25 +1,32 @@
 class ApiKey < ApplicationRecord
+  KINDS = %w[developer installation].freeze
+
   attr_accessor :token
 
   has_many :api_key_requests, dependent: :nullify
+  belongs_to :installation, optional: true
 
   validates :name, presence: true
-  validates :email, presence: true, uniqueness: { scope: :environment, conditions: -> { active } }
+  validates :kind, inclusion: { in: KINDS }
+  validates :email, presence: true, uniqueness: { scope: :environment, conditions: -> { active } }, if: :developer?
+  validates :installation, presence: true, if: :installation?
   validates :token_digest, presence: true, uniqueness: true
   validates :token_prefix, presence: true
   validates :environment, presence: true, inclusion: { in: %w[live test] }
 
   def self.ransackable_attributes(auth_object = nil)
-    %w[id name email token_prefix environment requests_count last_used_at revoked_at daily_limit created_at updated_at]
+    %w[id name email kind deprecated token_prefix environment requests_count last_used_at revoked_at daily_limit created_at updated_at]
   end
 
   def self.ransackable_associations(auth_object = nil)
-    %w[api_key_requests]
+    %w[api_key_requests installation]
   end
 
   scope :active, -> { where(revoked_at: nil) }
   scope :live, -> { where(environment: "live") }
   scope :test_env, -> { where(environment: "test") }
+  scope :developer_keys, -> { where(kind: "developer") }
+  scope :installation_keys, -> { where(kind: "installation") }
 
   before_validation :generate_token, on: :create
 
@@ -51,6 +58,14 @@ class ApiKey < ApplicationRecord
 
   def revoked?
     revoked_at.present?
+  end
+
+  def developer?
+    kind == "developer"
+  end
+
+  def installation?
+    kind == "installation"
   end
 
   def track_usage!

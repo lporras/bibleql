@@ -12,14 +12,18 @@ module ApiAuthenticatable
     @current_api_key = ApiKey.authenticate(token)
 
     if @current_api_key.nil?
-      render json: { errors: [ { message: "Invalid or missing API key" } ] }, status: :unauthorized
+      render_unauthenticated("Invalid or missing API key")
       return
     end
 
     unless @current_api_key.environment == ApiKey.expected_environment
       @current_api_key = nil
-      render json: { errors: [ { message: "API key not valid for this environment" } ] }, status: :unauthorized
+      render_unauthenticated("API key not valid for this environment")
     end
+  end
+
+  def render_unauthenticated(message)
+    render json: { errors: [ { message: message, extensions: { code: "UNAUTHENTICATED" } } ] }, status: :unauthorized
   end
 
   def extract_bearer_token

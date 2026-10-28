@@ -2,8 +2,8 @@
  * Shared values referenced from both docusaurus.config.ts and MDX pages, so a URL or a
  * rate limit is written down exactly once.
  *
- * Rate limits mirror config/initializers/rack_attack.rb. If you change them there,
- * change them here.
+ * Rate limits mirror config/initializers/rack_attack.rb and the per-key daily limits in
+ * app/models/api_key.rb. If you change them there, change them here.
  */
 
 export const REPO_URL = "https://github.com/lporras/bibleql";
@@ -74,10 +74,14 @@ client = bibleql.Client(
 )`,
 } as const;
 
-/** Verified against config/initializers/rack_attack.rb. */
+/**
+ * Per-IP limits: config/initializers/rack_attack.rb. Per-key daily limit: the api_keys.daily_limit
+ * column default (db/schema.rb), shared by developer, installation and deprecated keys.
+ */
 export const RATE_LIMITS = {
   graphqlPerIp: { limit: 100, period: "minute" },
   graphqlPerKey: { limit: 1000, period: "day" },
+  registrationPerIp: { limit: 10, period: "hour" },
   apiKeyRequestPerIp: { limit: 5, period: "hour" },
 } as const;
 

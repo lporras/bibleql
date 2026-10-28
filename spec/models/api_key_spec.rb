@@ -124,4 +124,32 @@ RSpec.describe ApiKey, type: :model do
       expect(ApiKey.expected_environment).to eq("test")
     end
   end
+
+  describe "kinds" do
+    it "defaults to a developer key" do
+      expect(create(:api_key)).to be_developer
+    end
+
+    it "does not require an email for installation keys" do
+      expect(build(:api_key, :installation, email: nil)).to be_valid
+    end
+
+    it "requires an installation for installation keys" do
+      key = build(:api_key, :installation, installation: nil)
+      expect(key).not_to be_valid
+      expect(key.errors[:installation]).to be_present
+    end
+
+    it "still requires an email for developer keys" do
+      expect(build(:api_key, email: nil)).not_to be_valid
+    end
+
+    it "rejects unknown kinds" do
+      expect(build(:api_key, kind: "admin")).not_to be_valid
+    end
+
+    it "issues installation tokens with the same environment prefix" do
+      expect(create(:api_key, :installation).token).to start_with("bql_test_")
+    end
+  end
 end

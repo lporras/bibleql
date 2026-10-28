@@ -10,7 +10,12 @@ import { API_KEY_REQUEST_URL, GRAPHQL_ENDPOINT } from "@site/src/constants";
 # Autenticación
 
 Toda petición al endpoint de GraphQL requiere una API key. No hay un nivel anónimo ni gratuito
-con límite: una petición sin autenticar se rechaza antes incluso de interpretar la query.
+con límite: una petición sin autenticar se rechaza antes de ejecutar la query.
+
+La única excepción es la mutación `registerInstallation`, con la que una instalación de una app
+cliente obtiene su propia key. Se acepta sin key solo cuando es el único campo de la operación y
+no se envía encabezado `Authorization`. Consulta las [keys de
+instalación](/getting-started/api-keys#installation-keys).
 
 ## Enviar la key
 
@@ -59,7 +64,8 @@ La key te identifica y consume tu cuota. Trátala como una contraseña.
 
 - **Mantenla en el servidor.** Todo lo que se envía a un navegador o a una app móvil es
   público, por más ofuscado que esté. Si necesitas texto bíblico en una app cliente, hazlo
-  pasar por tu propio backend.
+  pasar por tu propio backend, o da a cada instalación su propia [key de
+  instalación](/getting-started/api-keys#installation-keys), revocable.
 - **Usa variables de entorno**, no literales en el código. Los SDKs de Ruby y Node leen la key
   que les pases desde `ENV` / `process.env`; el cliente de Python lee `BIBLEQL_API_KEY`
   automáticamente si no le pasas `api_key`.
@@ -76,15 +82,19 @@ build.
 
 ## Cuando una key es rechazada
 
-Ambos fallos devuelven HTTP `401` con un cuerpo con forma de error de GraphQL:
+Ambos fallos devuelven HTTP `401` con un cuerpo con forma de error de GraphQL y el código
+`UNAUTHENTICATED`:
 
 ```json
-{ "errors": [{ "message": "Invalid or missing API key" }] }
+{ "errors": [{ "message": "Invalid or missing API key", "extensions": { "code": "UNAUTHENTICATED" } }] }
 ```
 
 ```json
-{ "errors": [{ "message": "API key not valid for this environment" }] }
+{ "errors": [{ "message": "API key not valid for this environment", "extensions": { "code": "UNAUTHENTICATED" } }] }
 ```
+
+Una app con una key de instalación debe responder a esto registrándose de nuevo (una vez), no
+reintentando con el mismo token.
 
 El primero cubre un encabezado ausente, un encabezado mal formado y un token desconocido o
 revocado — la API deliberadamente no los distingue, para que no puedas sondear keys válidas.
