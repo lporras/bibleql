@@ -23,6 +23,9 @@ class BibleqlSchema < GraphQL::Schema
   # For batch-loading (see https://graphql-ruby.org/dataloader/overview.html)
   use GraphQL::Dataloader
 
+  # Honours field `visible?` (see Types::BaseField installation_only:).
+  use GraphQL::Schema::Visibility
+
   # Introspection is available in all environments (API key authentication protects the endpoint)
 
   # GraphQL-Ruby calls this when something goes wrong while running a query:

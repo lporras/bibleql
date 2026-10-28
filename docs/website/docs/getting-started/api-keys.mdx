@@ -2,10 +2,10 @@
 id: api-keys
 title: API Keys
 sidebar_position: 4
-description: Requesting, rotating and managing BibleQL API keys.
+description: Requesting, rotating and managing BibleQL API keys, including per-installation keys for client apps.
 ---
 
-import { API_KEY_REQUEST_URL } from "@site/src/constants";
+import { API_KEY_REQUEST_URL, RATE_LIMITS } from "@site/src/constants";
 
 # API Keys
 
@@ -33,9 +33,87 @@ Only the prefix is meaningful to you. Server-side, keys are stored as bcrypt dig
 full token cannot be recovered from the database, which is why a lost key must be replaced
 rather than looked up.
 
-The first 12 characters also act as the identifier for [per-key rate
-limiting](/reference/rate-limits), so all your requests share one quota regardless of source
-IP.
+[Per-key rate limiting](/reference/rate-limits) is tracked against the key itself, so all your
+requests share one quota regardless of source IP.
+
+## Developer keys and installation keys
+
+There are two kinds of key. They authenticate the same way and get the same
+[limits](/reference/rate-limits); they differ in how they are issued.
+
+| | Developer key | Installation key |
+|---|---|---|
+| For | Your server, script or backend | One installed copy of a client app (e.g. BibleQL Reader) |
+| Issued by | The request form, after manual approval | The `registerInstallation` mutation, instantly |
+| Tied to | An email address | A UUID the app generates on first launch |
+| Replaced by | Asking for a revoke and a new key | Registering the same installation again |
+
+Everything else on this page is about developer keys.
+
+### Installation keys
+
+A client app that runs on users' devices cannot keep a shared key secret — anything compiled
+into a binary can be extracted. Instead, each installation registers itself on first launch
+and receives its own token, which it keeps in the operating system's secure storage (Keychain,
+Credential Manager, Secret Service). A leaked installation token exposes one install, and can be
+revoked without affecting any other.
+
+```graphql
+mutation Register($input: RegisterInstallationInput!) {
+  registerInstallation(input: $input) {
+    token        # shown once; store it securely
+    installationId
+    dailyLimit
+  }
+}
+```
+
+```json
+{
+  "input": {
+    "installationId": "3f2b8c1e-5d4a-4e7b-9c1f-2a6d8e0b7c45",
+    "platform": "MACOS",
+    "appVersion": "1.4.0"
+  }
+}
+```
+
+- Send it **without** an `Authorization` header. A request that carries one — even an invalid
+  one — is authenticated like any other and gets a `401`. `registerInstallation` must be the only
+  field in the operation.
+- `installationId` is a UUID the app generates once and keeps alongside the token. `platform` is
+  one of `MACOS`, `WINDOWS`, `LINUX`, `IOS`, `ANDROID`. `appVersion` allows letters, digits and
+  `. + -`, up to 32 characters.
+- Registering the **same `installationId` again revokes its previous token** and returns a new
+  one. Existing tokens are never returned — only their digests are stored. Use this to recover
+  when a token is lost or rejected.
+- Registration is limited to {RATE_LIMITS.registrationPerIp.limit} per {RATE_LIMITS.registrationPerIp.period} per IP. On failure the app should keep working
+  without network features and retry later.
+- Send `X-App-Version: <version>` on requests so the operator can see which versions are still
+  in use (recorded at most once an hour).
+
+Errors carry a code in `extensions.code`: `INVALID_INPUT` for a bad UUID or version, and
+`INSTALLATION_REVOKED` if the operator has banned the installation (it cannot re-register).
+
+### Deprecated keys
+
+The operator can mark a key **deprecated** — typically an old shared key compiled into earlier
+app releases. A deprecated key keeps working with the same limits, but every response carries a
+top-level extension telling the client to update:
+
+```json
+{
+  "data": { "...": "..." },
+  "extensions": {
+    "updateRequired": true,
+    "message": "This version of the app is out of date. Please update to keep using BibleQL.",
+    "updateUrl": "https://github.com/lporras/bibleql-reader/releases"
+  }
+}
+```
+
+Clients should show `message` as a non-blocking notice linking to `updateUrl`. A deprecated key
+can be revoked later, at which point it gets `401` like any other revoked key.
 
 ## One key per email per environment
 

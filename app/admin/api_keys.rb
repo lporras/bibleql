@@ -9,10 +9,15 @@ ActiveAdmin.register ApiKey do
   scope :active
   scope :live
   scope("Test") { |scope| scope.test_env }
+  scope("Developer") { |scope| scope.developer_keys }
+  scope("Installation") { |scope| scope.installation_keys }
+  scope("Deprecated") { |scope| scope.where(deprecated: true) }
 
   filter :email
   filter :name
   filter :token_prefix
+  filter :kind, as: :select, collection: ApiKey::KINDS
+  filter :deprecated
   filter :environment, as: :select, collection: %w[live test]
   filter :created_at
 
@@ -22,12 +27,15 @@ ActiveAdmin.register ApiKey do
     column :token_prefix
     column :name
     column :email
+    column :kind
     column :environment
     column :requests_count
     column :last_used_at
     column :status do |key|
       if key.revoked?
         status_tag "revoked", class: "red"
+      elsif key.deprecated?
+        status_tag "deprecated", class: "orange"
       else
         status_tag "active", class: "green"
       end
@@ -41,6 +49,10 @@ ActiveAdmin.register ApiKey do
       row :token_prefix
       row :name
       row :email
+      row :kind
+      row :installation do |key|
+        link_to key.installation.installation_id, admin_installation_path(key.installation) if key.installation
+      end
       row :environment
       row :requests_count
       row :last_used_at
@@ -48,6 +60,8 @@ ActiveAdmin.register ApiKey do
       row :status do |key|
         if key.revoked?
           status_tag "revoked (#{key.revoked_at.strftime('%Y-%m-%d')})", class: "red"
+        elsif key.deprecated?
+          status_tag "deprecated", class: "orange"
         else
           status_tag "active", class: "green"
         end
@@ -58,10 +72,21 @@ ActiveAdmin.register ApiKey do
 
     unless resource.revoked?
       panel "Actions" do
+        if resource.developer?
+          para do
+            link_to "Regenerate & Resend", regenerate_admin_api_key_path(resource),
+              method: :put, class: "button",
+              data: { confirm: "This will revoke the current key, generate a new one, and email it to #{resource.email}. Continue?" }
+          end
+        end
         para do
-          link_to "Regenerate & Resend", regenerate_admin_api_key_path(resource),
-            method: :put, class: "button",
-            data: { confirm: "This will revoke the current key, generate a new one, and email it to #{resource.email}. Continue?" }
+          if resource.deprecated?
+            link_to "Undeprecate", undeprecate_admin_api_key_path(resource), method: :put, class: "button",
+              data: { confirm: "Stop sending updateRequired for this key?" }
+          else
+            link_to "Mark Deprecated", deprecate_admin_api_key_path(resource), method: :put, class: "button",
+              data: { confirm: "Responses for this key will carry updateRequired, telling clients to update. Continue?" }
+          end
         end
         para do
           link_to "Revoke Key", revoke_admin_api_key_path(resource),
@@ -81,5 +106,15 @@ ActiveAdmin.register ApiKey do
   member_action :revoke, method: :put do
     resource.revoke!
     redirect_to admin_api_key_path(resource), notice: "API key revoked."
+  end
+
+  member_action :deprecate, method: :put do
+    resource.update!(deprecated: true)
+    redirect_to admin_api_key_path(resource), notice: "API key marked deprecated."
+  end
+
+  member_action :undeprecate, method: :put do
+    resource.update!(deprecated: false)
+    redirect_to admin_api_key_path(resource), notice: "API key is no longer deprecated."
   end
 end

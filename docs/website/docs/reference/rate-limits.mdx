@@ -9,7 +9,8 @@ import { RATE_LIMITS } from "@site/src/constants";
 
 # Rate Limits
 
-Three limits apply. All are enforced at the edge, before your query is parsed.
+Per-IP limits are enforced at the edge, before your query is parsed. Per-key limits are
+checked right after the key is authenticated, also before the query runs.
 
 <table>
   <thead>
@@ -22,9 +23,14 @@ Three limits apply. All are enforced at the edge, before your query is parsed.
       <td>per {RATE_LIMITS.graphqlPerIp.period}</td>
     </tr>
     <tr>
-      <td>GraphQL requests per API key</td>
+      <td>GraphQL requests per API key (developer or <a href="/getting-started/api-keys#installation-keys">installation</a>)</td>
       <td>{RATE_LIMITS.graphqlPerKey.limit.toLocaleString("en-US")}</td>
-      <td>per {RATE_LIMITS.graphqlPerKey.period}</td>
+      <td>per {RATE_LIMITS.graphqlPerKey.period} (UTC)</td>
+    </tr>
+    <tr>
+      <td>Requests without an API key (<code>registerInstallation</code>) per IP</td>
+      <td>{RATE_LIMITS.registrationPerIp.limit}</td>
+      <td>per {RATE_LIMITS.registrationPerIp.period}</td>
     </tr>
     <tr>
       <td>API key request form per IP</td>
@@ -35,13 +41,13 @@ Three limits apply. All are enforced at the edge, before your query is parsed.
 </table>
 
 The per-IP and per-key limits are independent — you can exhaust either one. The health check
-endpoint is exempt.
+endpoint is exempt. An operator can set a lower or higher daily limit on an individual key.
 
 ## Per-key means per key, not per host
 
-The per-key limit is tracked against the **first 12 characters of your token**, which is the
-key's prefix. Every process, server and region using the same key shares one daily allowance.
-Running ten instances does not give you ten times the quota.
+The per-key limit is tracked against the key itself. Every process, server and region using
+the same key shares one daily allowance, which resets at midnight UTC. Running ten instances
+does not give you ten times the quota.
 
 If you need isolated quotas for separate workloads, request separate keys on separate email
 addresses — see [API Keys](/getting-started/api-keys#one-key-per-email-per-environment).
@@ -57,14 +63,22 @@ Retry-After: 37
 ```
 
 ```json
-{ "errors": [{ "message": "Rate limit exceeded. Retry after 37 seconds." }] }
+{
+  "errors": [{
+    "message": "Rate limit exceeded. Retry after 37 seconds.",
+    "extensions": { "code": "RATE_LIMITED", "retryAfter": 37 }
+  }]
+}
 ```
 
 `Retry-After` is the number of seconds until the current window rolls over. Honour it rather
 than retrying immediately — retrying inside the window consumes nothing but still fails.
 
 Note that windows are fixed, not sliding: the per-minute counter resets at the boundary, so
-`Retry-After` can be anywhere from 1 to 60 seconds.
+`Retry-After` can be anywhere from 1 to 60 seconds. For a per-key daily limit it is the time
+left until midnight UTC.
+
+Branch on `extensions.code` (`RATE_LIMITED`) rather than on the message text, which may change.
 
 ## Staying under the limits
 

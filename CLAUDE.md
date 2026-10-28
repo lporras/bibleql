@@ -102,7 +102,9 @@ bin/rails db:test:prepare
 # API Key management
 bundle exec rake "api_keys:create[name,email,environment]"  # environment: test or live
 bundle exec rake "api_keys:revoke[prefix]"
-bundle exec rake api_keys:list
+bundle exec rake api_keys:list                     # KIND=developer|installation to filter
+bundle exec rake "api_keys:deprecate[prefix]"      # old shared reader key, after the new reader ships
+bundle exec rake "api_keys:undeprecate[prefix]"
 
 # Admin panel (development)
 # Visit http://localhost:3000/admin (admin@example.com / password)
@@ -123,7 +125,8 @@ bundle exec rake api_keys:list
 - **Reference Parsing**: bible_ref gem + localized book name fallback
 - **Asset Pipeline**: Propshaft with import maps (no Node.js bundler); Sprockets coexists for ActiveAdmin assets
 - **Authentication**: API Key-based auth for GraphQL endpoint (Bearer token in Authorization header)
-- **Rate Limiting**: rack-attack (100 req/min per IP, 1000 req/day per API key)
+- **Rate Limiting**: rack-attack (100 req/min per IP; 10/hour per IP for requests without an `Authorization` header, i.e. `registerInstallation`) plus `ApiKeyRateLimiter` in `GraphqlController` (per key, `api_keys.daily_limit`, default 1000/day, counted in `Rails.cache`, resets midnight UTC). Errors carry `extensions.code` (`RATE_LIMITED`, `UNAUTHENTICATED`)
+- **Unsplash**: `unsplash` gem from the `lporras/unsplash_rb` fork (`master`; the released 3.x gem declares Ruby < 4), configured in `config/initializers/unsplash.rb`
 - **Admin Panel**: ActiveAdmin at /admin (Devise auth for AdminUser)
 - **Testing**: RSpec (not Minitest) with Capybara/Selenium for system tests
 - **Deployment**: Docker + Kamal; hosted on Render (bibleql.org)
@@ -140,7 +143,8 @@ bundle exec rake api_keys:list
 - **Verse** — Individual verse with translation, book, chapter, verse_number, text, plus `text_search` (tsvector, GIN-indexed) for concordance
 - **OfflinePackage** — Published offline SQLite package per translation and schema version (`url`, `sha256`, sizes, `source_digest`); gated by `translations.offline_downloadable`
 - **ConcordanceWordIndex** — Per-translation word frequency (`lemma`, `verse_count`, `total_occurrences`) from `ts_stat`, backing `concordanceIndex`
-- **ApiKey** — API key with bcrypt digest, environment-aware prefixes (`bql_live_`/`bql_test_`), usage tracking
+- **ApiKey** — API key with bcrypt digest, environment-aware prefixes (`bql_live_`/`bql_test_`), usage tracking; `kind` is `developer` (email-based, request form) or `installation` (owned by an `Installation`, no email); `deprecated` keys still work but responses carry `extensions.updateRequired`
+- **Installation** — One installed client app (`installation_id` UUID, `platform`, `app_version`, `last_seen_at`, `revoked_at`); registers via `registerInstallation`; revoking it revokes its keys and blocks re-registration
 - **ApiKeyRequest** — Self-service API key request (pending/approved/rejected workflow)
 - **AdminUser** — Devise-authenticated admin user for ActiveAdmin panel
 
@@ -160,6 +164,9 @@ bundle exec rake api_keys:list
 - `concordance(translation, word, book, testament, first, after)` — Exhaustive, canonically-ordered concordance for a word, with per-book/testament counts and KWIC context
 - `concordanceIndex(translation, prefix, minOccurrences, first)` — Alphabetical word index with occurrence frequencies
 - `translations { offlineDownloadable offlinePackage(schemaVersion) { url sha256 sizeBytes … } }` — Downloadable offline SQLite packages (batch-loaded via `Sources::OfflinePackageSource`)
+- `backgroundImages(query, page, perPage)` — **Installation keys only** (hidden from other keys and from the public SDL via `installation_only:`). Unsplash photo search proxied through the server (key never leaves it); Unsplash failures return `images: []` + `errorCode`, not GraphQL errors. Internal doc: `docs/background_images.md` (not on docs.bibleql.org)
+- Mutation `registerInstallation(input: { installationId, platform, appVersion })` — No auth; issues a new installation token, revoking any previous one for that installation
+- Mutation `trackImageDownload(input: { imageId })` — **Installation keys only**. Enqueues Unsplash's required download ping (`TrackUnsplashDownloadJob`)
 
 ## Key Services
 
@@ -181,6 +188,10 @@ bundle exec rake api_keys:list
 - **TextSearchConfigResolver** (`app/services/text_search_config_resolver.rb`) — Maps a translation's `language` to a PostgreSQL text search configuration; falls back to `simple`
 - **OfflinePackages** (`app/services/offline_packages.rb` + `offline_packages/`) — `Builder` writes a translation to SQLite following `schema_v1.sql` (canonical-order `verses.id`, localized book names, FTS5 `unicode61 remove_diacritics 2`); `Publisher` gzips and uploads to R2 under an immutable content-addressed key; `ExportOfflinePackageJob` ties them together and skips unchanged `source_digest`. Config via `OFFLINE_R2_*`/`OFFLINE_PUBLIC_BASE_URL`. Every importer calls `OfflinePackages.enqueue_export` after indexing. Admin page: **Offline Packages** (`app/admin/offline_packages.rb`)
 - **ApiKeyMailer** (`app/mailers/api_key_mailer.rb`) — Sends approval/rejection emails via Resend
+- **InstallationRegistrar** (`app/services/installation_registrar.rb`) — Backs `registerInstallation`: find-or-create the `Installation` (race-safe), revoke its active keys, create a new installation key
+- **ApiKeyRateLimiter** (`app/services/api_key_rate_limiter.rb`) — Per-key daily quota, checked in `GraphqlController` after auth
+- **UnsplashClient** (`app/services/unsplash_client.rb`) — Wraps the unsplash gem; maps all failures to `UnsplashClient::{NotConfigured,RateLimited,Unavailable}`; `track_download` only sends the key to `https://api.unsplash.com/photos/:id/download`
+- **BackgroundImageSearch** (`app/services/background_image_search.rb`) — Backs `backgroundImages`: normalizes/clamps args, caches results 12h per query+page, caches each photo's `download_location` 24h for `trackImageDownload`, 5-minute backoff after an Unsplash rate limit
 
 ## Authentication
 
@@ -189,6 +200,9 @@ All `POST /graphql` requests require an API key via the `Authorization: Bearer <
 - **Token prefixes**: `bql_live_` (production), `bql_test_` (development/test)
 - **One key per email per environment** (unique constraint)
 - Keys can be created via rake tasks or through the self-service request flow (admin approval required)
+- **Installation keys**: client apps (bibleql-reader) call `registerInstallation` without an `Authorization` header. `GraphqlController#registration_request?` parses the query and skips auth only when the selected operation is a mutation whose root fields are all `registerInstallation`/`__typename` and no `Authorization` header is present. Clients may send `X-App-Version`; `Installation#touch_seen!` records it at most once an hour
+- **Unsplash key**: `UNSPLASH_ACCESS_KEY` env (fallback `credentials.unsplash.access_key`) is server-only and must never appear in a response; `UNSPLASH_UTM_SOURCE` defaults to `bibleql-reader`
+- **Deprecated keys**: `DEPRECATED_KEY_MESSAGE` / `READER_UPDATE_URL` env override the `extensions.updateRequired` message and link; each use is logged as `[deprecated_api_key]`
 - GraphiQL and Playground have a headers panel for entering the API key
 
 ## Concordance Invariants
@@ -200,6 +214,13 @@ All `POST /graphql` requests require an API key via the `Authorization: Bearer <
   automatically. Do not add manual cache-clearing logic.
 - `context` contains `<mark>` HTML. Never interpolate user input into it beyond `plainto_tsquery`.
 - Always use `plainto_tsquery`, never `to_tsquery`, for user-supplied words.
+
+## Unsplash Proxy Invariants
+
+- `backgroundImages` / `trackImageDownload` are for the BibleQL client apps only: keep them `installation_only: true`, and never document them on docs.bibleql.org (internal doc: `docs/background_images.md`).
+- The Unsplash access key never leaves the server: not in responses, error messages or logs.
+- `trackImageDownload` never fetches a client-supplied URL; it only pings `https://api.unsplash.com/photos/:id/download`.
+- Unsplash failures are returned as `errorCode` in the payload, never as GraphQL errors or 500s.
 
 ## Offline Package Invariants
 

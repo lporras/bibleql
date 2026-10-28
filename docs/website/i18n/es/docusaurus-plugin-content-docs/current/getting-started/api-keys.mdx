@@ -2,10 +2,10 @@
 id: api-keys
 title: API Keys
 sidebar_position: 4
-description: Solicitar, rotar y gestionar API keys de BibleQL.
+description: Solicitar, rotar y gestionar API keys de BibleQL, incluidas las keys por instalación para apps cliente.
 ---
 
-import { API_KEY_REQUEST_URL } from "@site/src/constants";
+import { API_KEY_REQUEST_URL, RATE_LIMITS } from "@site/src/constants";
 
 # API Keys
 
@@ -33,9 +33,91 @@ Solo el prefijo te resulta significativo. En el servidor las keys se almacenan c
 bcrypt — el token completo no se puede recuperar de la base de datos, y por eso una key perdida
 debe reemplazarse en lugar de consultarse.
 
-Los primeros 12 caracteres también actúan como identificador para el
-[límite de peticiones por key](/reference/rate-limits), así que todas tus peticiones comparten
-una sola cuota, sea cual sea la IP de origen.
+El [límite de peticiones por key](/reference/rate-limits) se cuenta contra la propia key, así
+que todas tus peticiones comparten una sola cuota, sea cual sea la IP de origen.
+
+## Keys de desarrollador y keys de instalación {#developer-keys-and-installation-keys}
+
+Hay dos tipos de key. Se autentican igual y tienen los mismos
+[límites](/reference/rate-limits); se diferencian en cómo se emiten.
+
+| | Key de desarrollador | Key de instalación |
+|---|---|---|
+| Para | Tu servidor, script o backend | Una copia instalada de una app cliente (p. ej. BibleQL Reader) |
+| La emite | El formulario de solicitud, tras aprobación manual | La mutación `registerInstallation`, al instante |
+| Ligada a | Una dirección de correo | Un UUID que la app genera en su primer arranque |
+| Se reemplaza | Pidiendo que se revoque y solicitando otra | Registrando de nuevo la misma instalación |
+
+Todo lo demás en esta página trata de las keys de desarrollador.
+
+### Keys de instalación {#installation-keys}
+
+Una app cliente que corre en los dispositivos de sus usuarios no puede mantener en secreto una
+key compartida: todo lo que se compila dentro de un binario se puede extraer. En su lugar, cada
+instalación se registra en su primer arranque y recibe su propio token, que guarda en el
+almacenamiento seguro del sistema operativo (Keychain, Credential Manager, Secret Service). Un
+token de instalación filtrado expone una sola instalación y se puede revocar sin afectar a
+ninguna otra.
+
+```graphql
+mutation Register($input: RegisterInstallationInput!) {
+  registerInstallation(input: $input) {
+    token        # se muestra una sola vez; guárdalo de forma segura
+    installationId
+    dailyLimit
+  }
+}
+```
+
+```json
+{
+  "input": {
+    "installationId": "3f2b8c1e-5d4a-4e7b-9c1f-2a6d8e0b7c45",
+    "platform": "MACOS",
+    "appVersion": "1.4.0"
+  }
+}
+```
+
+- Envíala **sin** encabezado `Authorization`. Una petición que lo lleve —aunque sea inválido— se
+  autentica como cualquier otra y recibe un `401`. `registerInstallation` debe ser el único campo
+  de la operación.
+- `installationId` es un UUID que la app genera una vez y guarda junto al token. `platform` es
+  uno de `MACOS`, `WINDOWS`, `LINUX`, `IOS`, `ANDROID`. `appVersion` admite letras, dígitos y
+  `. + -`, hasta 32 caracteres.
+- Registrar de nuevo **el mismo `installationId` revoca su token anterior** y devuelve uno nuevo.
+  Nunca se devuelven tokens existentes: solo se guardan sus digests. Úsalo para recuperarte
+  cuando un token se pierde o es rechazado.
+- El registro está limitado a {RATE_LIMITS.registrationPerIp.limit} por hora y por IP. Si falla, la app debe seguir
+  funcionando sin las funciones de red y reintentar más tarde.
+- Envía `X-App-Version: <versión>` en las peticiones para que el operador vea qué versiones
+  siguen en uso (se registra como mucho una vez por hora).
+
+Los errores llevan un código en `extensions.code`: `INVALID_INPUT` para un UUID o versión
+incorrectos, e `INSTALLATION_REVOKED` si el operador ha bloqueado la instalación (no puede volver
+a registrarse).
+
+### Keys obsoletas {#deprecated-keys}
+
+El operador puede marcar una key como **obsoleta** (deprecated); normalmente una key compartida
+antigua compilada en versiones anteriores de una app. Una key obsoleta sigue funcionando con los
+mismos límites, pero cada respuesta lleva una extensión de nivel superior que pide al cliente
+actualizarse:
+
+```json
+{
+  "data": { "...": "..." },
+  "extensions": {
+    "updateRequired": true,
+    "message": "This version of the app is out of date. Please update to keep using BibleQL.",
+    "updateUrl": "https://github.com/lporras/bibleql-reader/releases"
+  }
+}
+```
+
+Los clientes deberían mostrar `message` como un aviso no bloqueante que enlace a `updateUrl`. Una
+key obsoleta puede revocarse más adelante; a partir de ese momento recibe `401` como cualquier
+otra key revocada.
 
 ## Una key por correo y por entorno
 

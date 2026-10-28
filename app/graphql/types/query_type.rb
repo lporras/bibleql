@@ -240,6 +240,25 @@ module Types
         .call(first: first)
     end
 
+    field :background_images, Types::BackgroundImageSearchType, null: false, installation_only: true,
+      description: "Search Unsplash for background photos (proxied: clients never hold an Unsplash key). " \
+        "Results are cached for 12 hours per query and page. Unsplash failures return an empty list " \
+        "with errorCode set rather than a GraphQL error." do
+      argument :query, String, required: true, description: "Search words (e.g. 'sunrise', 'mountains')"
+      argument :page, Integer, required: false, default_value: 1, description: "Page number. Clamped to 1..100."
+      argument :per_page, Integer, required: false, default_value: BackgroundImageSearch::DEFAULT_PER_PAGE,
+        description: "Results per page. Clamped to 1..30."
+    end
+    def background_images(query:, page:, per_page:)
+      unless context[:current_api_key]
+        raise GraphQL::ExecutionError.new("Invalid or missing API key", extensions: { "code" => "UNAUTHENTICATED" })
+      end
+
+      BackgroundImageSearch.new(query: query, page: page, per_page: per_page).call
+    rescue BackgroundImageSearch::InvalidQuery => e
+      raise GraphQL::ExecutionError.new(e.message, extensions: { "code" => "INVALID_INPUT" })
+    end
+
     private
 
     def find_book(translation, book_identifier)

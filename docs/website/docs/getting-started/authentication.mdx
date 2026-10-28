@@ -10,8 +10,12 @@ import { API_KEY_REQUEST_URL, GRAPHQL_ENDPOINT } from "@site/src/constants";
 # Authentication
 
 Every request to the GraphQL endpoint requires an API key. There is no anonymous or
-rate-limited-but-free tier — an unauthenticated request is rejected before the query is even
-parsed.
+rate-limited-but-free tier — an unauthenticated request is rejected before the query runs.
+
+The one exception is the `registerInstallation` mutation, which is how a client app installation
+obtains its own key. It is accepted without a key only when it is the sole field in the
+operation and no `Authorization` header is sent. See [installation
+keys](/getting-started/api-keys#installation-keys).
 
 ## Sending the key
 
@@ -59,7 +63,8 @@ submitting repeatedly will not speed anything up.
 The key identifies you and counts against your quota. Treat it like a password.
 
 - **Keep it server-side.** Anything shipped to a browser or mobile app is public, however
-  obfuscated. If you need Bible text in a client app, proxy through your own backend.
+  obfuscated. If you need Bible text in a client app, proxy through your own backend, or give
+  each installation its own revocable [installation key](/getting-started/api-keys#installation-keys).
 - **Use environment variables**, not literals in source. The Ruby and Node SDKs read
   `BIBLEQL_API_KEY` if you pass it explicitly from `ENV` / `process.env`; the Python client
   reads it automatically when no `api_key` is given.
@@ -74,15 +79,19 @@ Its own README says as much. Use it from a server, a serverless function, or a b
 
 ## When a key is rejected
 
-Both failures return HTTP `401` with a GraphQL-shaped error body:
+Both failures return HTTP `401` with a GraphQL-shaped error body and the code
+`UNAUTHENTICATED`:
 
 ```json
-{ "errors": [{ "message": "Invalid or missing API key" }] }
+{ "errors": [{ "message": "Invalid or missing API key", "extensions": { "code": "UNAUTHENTICATED" } }] }
 ```
 
 ```json
-{ "errors": [{ "message": "API key not valid for this environment" }] }
+{ "errors": [{ "message": "API key not valid for this environment", "extensions": { "code": "UNAUTHENTICATED" } }] }
 ```
+
+An app holding an installation key should respond to this by registering again (once), not by
+retrying the same token.
 
 The first covers a missing header, a malformed header, and an unknown or revoked token — the
 API deliberately does not distinguish them, so you cannot probe for valid keys.

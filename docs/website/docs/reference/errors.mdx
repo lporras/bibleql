@@ -24,7 +24,7 @@ failure.
 Missing, malformed, unknown or revoked key:
 
 ```json
-{ "errors": [{ "message": "Invalid or missing API key" }] }
+{ "errors": [{ "message": "Invalid or missing API key", "extensions": { "code": "UNAUTHENTICATED" } }] }
 ```
 
 These four causes deliberately share one message so the endpoint cannot be used to test
@@ -33,7 +33,7 @@ whether a key exists.
 A key used in the wrong environment:
 
 ```json
-{ "errors": [{ "message": "API key not valid for this environment" }] }
+{ "errors": [{ "message": "API key not valid for this environment", "extensions": { "code": "UNAUTHENTICATED" } }] }
 ```
 
 That second message almost always means a deployment picked up a `bql_test_` key in
@@ -42,10 +42,22 @@ production, or the reverse. See [Authentication](/getting-started/authentication
 ## Rate limiting — HTTP 429
 
 ```json
-{ "errors": [{ "message": "Rate limit exceeded. Retry after 37 seconds." }] }
+{ "errors": [{ "message": "Rate limit exceeded. Retry after 37 seconds.", "extensions": { "code": "RATE_LIMITED", "retryAfter": 37 } }] }
 ```
 
 Accompanied by a `Retry-After` header. See [Rate Limits](/reference/rate-limits).
+
+## Error codes
+
+Errors that a client is expected to handle carry a machine-readable `extensions.code`. Branch on
+it rather than on message text.
+
+| Code | HTTP | Meaning |
+|---|---|---|
+| `UNAUTHENTICATED` | 401 | Missing, invalid, revoked or wrong-environment key |
+| `RATE_LIMITED` | 429 | A per-IP or per-key limit was hit; see `extensions.retryAfter` |
+| `INVALID_INPUT` | 200 | An argument failed validation (e.g. a non-UUID `installationId`) |
+| `INSTALLATION_REVOKED` | 200 | `registerInstallation` for an installation the operator has revoked |
 
 ## Invalid translation
 

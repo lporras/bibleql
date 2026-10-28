@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_29_000003) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_27_000001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "vector"
@@ -58,8 +58,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_000003) do
   create_table "api_keys", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.integer "daily_limit", default: 1000, null: false
-    t.string "email", null: false
+    t.boolean "deprecated", default: false, null: false
+    t.string "email"
     t.string "environment", default: "test", null: false
+    t.bigint "installation_id"
+    t.string "kind", default: "developer", null: false
     t.datetime "last_used_at"
     t.string "name", null: false
     t.integer "requests_count", default: 0, null: false
@@ -68,6 +71,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_000003) do
     t.string "token_prefix", limit: 12, null: false
     t.datetime "updated_at", null: false
     t.index ["email", "environment"], name: "index_api_keys_on_email_and_environment_active", unique: true, where: "(revoked_at IS NULL)"
+    t.index ["installation_id"], name: "index_api_keys_on_installation_id"
+    t.index ["kind"], name: "index_api_keys_on_kind"
     t.index ["revoked_at"], name: "index_api_keys_on_revoked_at"
     t.index ["token_digest"], name: "index_api_keys_on_token_digest", unique: true
     t.index ["token_prefix"], name: "index_api_keys_on_token_prefix"
@@ -106,6 +111,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_000003) do
     t.index ["translation_id", "lemma"], name: "index_concordance_word_index_on_lemma_pattern", opclass: { lemma: :text_pattern_ops }
     t.index ["translation_id", "lemma"], name: "index_concordance_word_index_on_translation_id_and_lemma", unique: true
     t.index ["translation_id"], name: "index_concordance_word_index_on_translation_id"
+  end
+
+  create_table "installations", force: :cascade do |t|
+    t.string "app_version", null: false
+    t.datetime "created_at", null: false
+    t.uuid "installation_id", null: false
+    t.datetime "last_seen_at"
+    t.string "platform", null: false
+    t.datetime "revoked_at"
+    t.datetime "updated_at", null: false
+    t.index ["installation_id"], name: "index_installations_on_installation_id", unique: true
   end
 
   create_table "offline_packages", force: :cascade do |t|
@@ -281,6 +297,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_000003) do
   end
 
   add_foreign_key "api_key_requests", "api_keys"
+  add_foreign_key "api_keys", "installations"
   add_foreign_key "book_names", "books"
   add_foreign_key "book_names", "translations"
   add_foreign_key "concordance_word_index", "translations"

@@ -1,6 +1,6 @@
 source "https://rubygems.org"
 
-# Bundle edge Rails instead: gem "rails", github: "rails/rails", branch: "main"
+# Bundle edge Rails instead: gem "rails", github: "rails/rails", branch: "master"
 gem "rails", "~> 8.1.3"
 # The modern asset pipeline for Rails [https://github.com/rails/propshaft]
 gem "propshaft"
@@ -32,6 +32,8 @@ gem "rack-attack"
 gem "neighbor"
 # LLM client for embeddings, chat, etc. [https://github.com/crmne/ruby_llm]
 gem "ruby_llm"
+# Official Unsplash API client (fork; the released 3.x gem excludes Ruby 4), used by the backgroundImages proxy [https://github.com/unsplash/unsplash_rb]
+gem "unsplash", github: "lporras/unsplash_rb", branch: "master"
 # Resend email delivery [https://resend.com/docs/send-with-ruby-on-rails]
 gem "resend"
 # Admin panel [https://activeadmin.info]
@@ -98,6 +100,8 @@ group :test do
   gem "selenium-webdriver"
   # Code coverage [https://github.com/simplecov-ruby/simplecov]
   gem "simplecov", require: false
+  # Stub outbound HTTP (Unsplash) [https://github.com/bblimke/webmock]
+  gem "webmock"
 end
 
 gem "rspec-rails", "~> 8.0", groups: [ :development, :test ]
