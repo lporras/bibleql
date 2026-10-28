@@ -23,7 +23,7 @@ gem "bible_parser", "~> 1.1.3"
 # Parse Bible reference strings [https://github.com/seven1m/bible_ref]
 gem "bible_ref"
 # GraphQL API [https://graphql-ruby.org]
-gem "graphql", "~> 2.5"
+gem "graphql", "~> 2.6"
 # CORS support for GraphQL API [https://github.com/cyu/rack-cors]
 gem "rack-cors"
 # Rate limiting middleware [https://github.com/rack/rack-attack]
