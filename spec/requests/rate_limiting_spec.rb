@@ -42,6 +42,39 @@ RSpec.describe "Rate limiting", :with_cache, type: :request do
     end
   end
 
+  describe "API key request form throttle (Rack::Attack)" do
+    around do |example|
+      Rack::Attack.enabled = true
+      example.run
+    ensure
+      Rack::Attack.enabled = false
+    end
+
+    def submit_from(client_ip, edge: "172.71.151.144")
+      post api_key_requests_path,
+        params: { api_key_request: { name: "", email: "", description: "" } },
+        headers: { "REMOTE_ADDR" => edge, "CF-Connecting-IP" => client_ip }
+    end
+
+    it "limits each real client to 5 posts per hour, not each Cloudflare edge" do
+      5.times { submit_from("203.0.113.7") }
+      expect(response).not_to have_http_status(:too_many_requests)
+
+      submit_from("203.0.113.7")
+      expect(response).to have_http_status(:too_many_requests)
+
+      submit_from("203.0.113.8")
+      expect(response).not_to have_http_status(:too_many_requests)
+    end
+
+    it "does not let a non-Cloudflare client dodge the limit by setting CF-Connecting-IP" do
+      5.times { |i| submit_from("203.0.113.#{i}", edge: "198.51.100.20") }
+      submit_from("203.0.113.99", edge: "198.51.100.20")
+
+      expect(response).to have_http_status(:too_many_requests)
+    end
+  end
+
   describe "per-key daily limit" do
     it "gives installation keys the same default as developer keys" do
       expect(create(:api_key, :installation).daily_limit).to eq(1000)

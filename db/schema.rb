@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_27_000001) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_17_000001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "vector"
@@ -51,8 +51,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_27_000001) do
     t.text "rejection_reason"
     t.string "status", default: "pending", null: false
     t.datetime "updated_at", null: false
+    t.string "normalized_email"
     t.index ["api_key_id"], name: "index_api_key_requests_on_api_key_id"
     t.index ["email", "environment", "status"], name: "index_api_key_requests_on_email_and_environment_and_status"
+    t.index ["normalized_email", "created_at"], name: "index_api_key_requests_on_normalized_email_and_created_at"
   end
 
   create_table "api_keys", force: :cascade do |t|

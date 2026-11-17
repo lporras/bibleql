@@ -2,16 +2,19 @@
 
 Rack::Attack.cache.store = Rails.cache
 
+# Every per-IP rule keys on ClientIp.for(req), not req.ip: behind Cloudflare, req.ip is a
+# Cloudflare edge address shared by many clients.
+
 # Throttle all GraphQL requests by IP: 100 requests per minute
 Rack::Attack.throttle("graphql/ip", limit: 100, period: 60.seconds) do |req|
-  req.ip if req.path == "/graphql" && req.post?
+  ClientIp.for(req) if req.path == "/graphql" && req.post?
 end
 
 # Throttle GraphQL requests without an Authorization header: 10 per hour per IP. The only
 # thing such a request can do is registerInstallation (see GraphqlController#registration_request?),
 # so this is the registration limit — the main way around per-key limits is minting new keys.
 Rack::Attack.throttle("graphql/unauthenticated/ip", limit: 10, period: 1.hour) do |req|
-  req.ip if req.path == "/graphql" && req.post? && req.env["HTTP_AUTHORIZATION"].blank?
+  ClientIp.for(req) if req.path == "/graphql" && req.post? && req.env["HTTP_AUTHORIZATION"].blank?
 end
 
 # Per-API-key daily limits are enforced in GraphqlController (ApiKeyRateLimiter), since they
@@ -19,7 +22,7 @@ end
 
 # Throttle API key request form: 5 submissions per hour per IP
 Rack::Attack.throttle("api_key_requests/ip", limit: 5, period: 1.hour) do |req|
-  req.ip if req.path.start_with?("/api-keys/request") && req.post?
+  ClientIp.for(req) if req.path.start_with?("/api-keys/request") && req.post?
 end
 
 # Safelist health check. Uptime monitors and Render's own probe use HEAD as often

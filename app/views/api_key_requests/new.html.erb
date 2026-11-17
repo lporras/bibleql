@@ -35,6 +35,10 @@
         placeholder: "Describe your application or use case..." %>
     </div>
 
+    <% if TurnstileVerifier.enabled? %>
+      <div data-controller="turnstile" data-turnstile-site-key-value="<%= TurnstileVerifier.site_key %>"></div>
+    <% end %>
+
     <div>
       <%= f.submit "Submit Request",
         class: "w-full rounded-lg bg-indigo-600 px-6 py-3 text-white font-semibold hover:bg-indigo-500 transition cursor-pointer" %>

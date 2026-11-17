@@ -32,6 +32,12 @@ class ApiKeyRequestsController < ApplicationController
     @api_key_request = ApiKeyRequest.new(api_key_request_params)
     @api_key_request.environment = ApiKey.expected_environment
 
+    # Before save, so a bot that fails the challenge never touches the database or sends email.
+    unless human_verified?
+      @api_key_request.errors.add(:base, "Please complete the verification challenge and try again.")
+      return render :new, status: :unprocessable_content
+    end
+
     if @api_key_request.save
       auto_approve(@api_key_request)
       redirect_to success_api_key_requests_path(email: @api_key_request.email)
@@ -41,6 +47,12 @@ class ApiKeyRequestsController < ApplicationController
   end
 
   private
+
+  def human_verified?
+    return true unless TurnstileVerifier.enabled?
+
+    TurnstileVerifier.new.verify(params["cf-turnstile-response"], remote_ip: ClientIp.for(request))
+  end
 
   def auto_approve(api_key_request)
     ApiKeyRequest.transaction do
