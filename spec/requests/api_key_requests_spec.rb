@@ -1,6 +1,17 @@
 require "rails_helper"
 
 RSpec.describe "API Key Requests", type: :request do
+  # .env is loaded in test too, so pin the flag for every example.
+  around do |example|
+    original = ENV["API_KEY_REQUESTS_PAUSED"]
+    ENV["API_KEY_REQUESTS_PAUSED"] = paused
+    example.run
+  ensure
+    ENV["API_KEY_REQUESTS_PAUSED"] = original
+  end
+
+  let(:paused) { nil }
+
   describe "GET /api-keys/request" do
     it "renders the request form" do
       get new_api_key_request_path
@@ -67,6 +78,29 @@ RSpec.describe "API Key Requests", type: :request do
       }.not_to change(ApiKeyRequest, :count)
 
       expect(response).to have_http_status(:unprocessable_content)
+    end
+  end
+
+  context "when requests are paused" do
+    let(:paused) { "true" }
+
+    it "shows a notice instead of the form" do
+      get new_api_key_request_path
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("temporarily paused")
+      expect(response.body).not_to include("Submit Request")
+    end
+
+    it "refuses submissions without creating records or sending email" do
+      expect {
+        post api_key_requests_path, params: {
+          api_key_request: { name: "Bot", email: "bot@example.com", description: "spam" }
+        }
+      }.to change(ApiKeyRequest, :count).by(0)
+        .and change(ApiKey, :count).by(0)
+        .and change { ActionMailer::Base.deliveries.count }.by(0)
+
+      expect(response).to have_http_status(:service_unavailable)
     end
   end
 end

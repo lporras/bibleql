@@ -4,6 +4,7 @@
     Fill out the form below and we'll review your request. You'll receive your API key by email once approved.
   </p>
 
+  <% if accepting_requests? %>
   <%= form_with(model: @api_key_request, url: api_key_requests_path, class: "mt-8 space-y-6") do |f| %>
     <% if @api_key_request.errors.any? %>
       <div class="rounded-lg bg-red-50 p-4">
@@ -37,6 +38,11 @@
     <div>
       <%= f.submit "Submit Request",
         class: "w-full rounded-lg bg-indigo-600 px-6 py-3 text-white font-semibold hover:bg-indigo-500 transition cursor-pointer" %>
+    </div>
+  <% end %>
+  <% else %>
+    <div class="mt-8 rounded-lg bg-yellow-50 p-4 text-sm text-yellow-800">
+      New API key requests are temporarily paused. Please check back soon.
     </div>
   <% end %>
 </div>
