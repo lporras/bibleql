@@ -24,13 +24,13 @@ function loadTurnstile() {
 }
 
 export default class extends Controller {
-  static values = { siteKey: String }
+  static values = { siteKey: String, action: String }
 
   async connect() {
     try {
       const turnstile = await loadTurnstile()
       if (!this.element.isConnected) return
-      this.widgetId = turnstile.render(this.element, { sitekey: this.siteKeyValue })
+      this.widgetId = turnstile.render(this.element, { sitekey: this.siteKeyValue, action: this.actionValue })
     } catch (error) {
       console.error(error)
     }
