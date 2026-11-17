@@ -22,14 +22,15 @@ RSpec.describe ApiKeyRequest, type: :model do
       expect(duplicate).not_to be_valid
     end
 
+    # Earlier requests are dated past REQUEST_COOLDOWN so only the pending-duplicate rule applies.
     it "allows same email in different environments" do
-      create(:api_key_request, email: "user@example.com", environment: "test")
+      create(:api_key_request, email: "user@example.com", environment: "test", created_at: 2.days.ago)
       live_request = build(:api_key_request, email: "user@example.com", environment: "live")
       expect(live_request).to be_valid
     end
 
     it "allows new request after previous one was approved" do
-      request = create(:api_key_request, email: "user@example.com", environment: "test")
+      request = create(:api_key_request, email: "user@example.com", environment: "test", created_at: 2.days.ago)
       request.approve!
       new_request = build(:api_key_request, email: "user@example.com", environment: "live")
       expect(new_request).to be_valid
@@ -60,6 +61,72 @@ RSpec.describe ApiKeyRequest, type: :model do
 
       expect(request.reload.status).to eq("rejected")
       expect(request.rejection_reason).to eq("Spam request")
+    end
+  end
+
+  describe "name length" do
+    it "allows names up to #{ApiKeyRequest::NAME_MAX_LENGTH} characters" do
+      expect(build(:api_key_request, name: "a" * ApiKeyRequest::NAME_MAX_LENGTH)).to be_valid
+    end
+
+    it "rejects longer names on create" do
+      request = build(:api_key_request, name: "a" * (ApiKeyRequest::NAME_MAX_LENGTH + 1))
+      expect(request).not_to be_valid
+      expect(request.errors[:name]).to include("is too long (maximum is 100 characters)")
+    end
+
+    it "still lets an existing request with a long name be rejected" do
+      request = create(:api_key_request)
+      request.update_column(:name, "a" * 300)
+
+      expect { request.reject!("Spam") }.not_to raise_error
+      expect(request.reload.status).to eq("rejected")
+    end
+  end
+
+  describe ".normalize_email" do
+    it "collapses spellings that reach the same inbox" do
+      expect(described_class.normalize_email(" Victim+promo@Example.COM ")).to eq("victim@example.com")
+      expect(described_class.normalize_email("j.o.h.n+1@gmail.com")).to eq("john@gmail.com")
+      expect(described_class.normalize_email("j.o.h.n@googlemail.com")).to eq("john@googlemail.com")
+    end
+
+    it "keeps dots for non-Gmail domains" do
+      expect(described_class.normalize_email("first.last@example.com")).to eq("first.last@example.com")
+    end
+
+    it "returns nil for blank or malformed input" do
+      expect(described_class.normalize_email(nil)).to be_nil
+      expect(described_class.normalize_email("no-at-sign")).to be_nil
+    end
+  end
+
+  describe "one request per inbox per day" do
+    it "stores the normalized email" do
+      expect(create(:api_key_request, email: "John.Doe+x@Gmail.com").normalized_email).to eq("johndoe@gmail.com")
+    end
+
+    it "rejects another request for the same inbox within 24 hours, whatever its status" do
+      create(:api_key_request, email: "victim@gmail.com", status: "rejected")
+
+      request = build(:api_key_request, email: "V.ictim+2@gmail.com")
+      expect(request).not_to be_valid
+      expect(request.errors[:email]).to include("already requested a key recently. Please try again in 24 hours")
+    end
+
+    it "applies across environments" do
+      create(:api_key_request, email: "dev@example.com", environment: "live", status: "approved")
+      expect(build(:api_key_request, email: "dev@example.com", environment: "test")).not_to be_valid
+    end
+
+    it "allows a new request once the cooldown has passed" do
+      create(:api_key_request, email: "dev@example.com", status: "rejected", created_at: 25.hours.ago)
+      expect(build(:api_key_request, email: "dev@example.com")).to be_valid
+    end
+
+    it "does not block other inboxes" do
+      create(:api_key_request, email: "dev@example.com")
+      expect(build(:api_key_request, email: "other@example.com")).to be_valid
     end
   end
 end

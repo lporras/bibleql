@@ -32,8 +32,26 @@ class ApiKeyRequestsController < ApplicationController
     @api_key_request = ApiKeyRequest.new(api_key_request_params)
     @api_key_request.environment = ApiKey.expected_environment
 
+    # Before save, so a bot that fails the challenge never touches the database or sends email.
+    unless human_verified?
+      @api_key_request.errors.add(:base, "Please complete the verification challenge and try again.")
+      return render :new, status: :unprocessable_content
+    end
+
+    # Looks like a bot: keep the record for review, but no key and no email. The redirect below
+    # is the same as for a real request, so the bot can't tell it was caught.
+    spam_check = ApiKeyRequestSpamCheck.new(@api_key_request, honeypot: params[:website])
+    if spam_check.spam?
+      @api_key_request.status = "rejected"
+      @api_key_request.rejection_reason = "Flagged as spam: #{spam_check.reasons.join(', ')}"
+    end
+
     if @api_key_request.save
-      auto_approve(@api_key_request)
+      if spam_check.spam?
+        Rails.logger.info("[spam] API key request ##{@api_key_request.id} flagged: #{spam_check.reasons.join(', ')}")
+      else
+        auto_approve(@api_key_request)
+      end
       redirect_to success_api_key_requests_path(email: @api_key_request.email)
     else
       render :new, status: :unprocessable_content
@@ -41,6 +59,12 @@ class ApiKeyRequestsController < ApplicationController
   end
 
   private
+
+  def human_verified?
+    return true unless TurnstileVerifier.enabled?
+
+    TurnstileVerifier.new.verify(params["cf-turnstile-response"], remote_ip: ClientIp.for(request))
+  end
 
   def auto_approve(api_key_request)
     ApiKeyRequest.transaction do

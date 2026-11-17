@@ -91,4 +91,26 @@ namespace :api_keys do
         key.environment, key.requests_count, last_used, status
     end
   end
+
+  desc "Delete rejected key requests, bot key requests (spam name or SEO-phrase description) " \
+       "and the keys they created. Dry run unless CONFIRM=1"
+  task purge_bots: :environment do
+    cleanup = BotApiKeyCleanup.new
+    confirmed = ENV["CONFIRM"] == "1"
+    result = confirmed ? cleanup.call : cleanup.preview
+    verb = confirmed ? "Deleted" : "Would delete"
+
+    puts confirmed ? "Bot API key cleanup" : "Bot API key cleanup (DRY RUN, set CONFIRM=1 to delete)"
+    puts "#{verb} #{result.bot_requests} bot key requests"
+    puts "#{verb} #{result.bot_keys} API keys created by those requests"
+    puts "#{verb} #{result.rejected_requests} other rejected key requests"
+
+    if result.used_keys.any?
+      puts "\n#{result.used_keys.size} of those bot keys had been used:"
+      result.used_keys.each do |key|
+        printf "  %-14s %8d requests  last used %s\n", key.token_prefix, key.requests_count,
+          key.last_used_at&.utc&.strftime("%Y-%m-%d %H:%M") || "never"
+      end
+    end
+  end
 end

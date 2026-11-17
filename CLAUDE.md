@@ -126,6 +126,8 @@ bundle exec rake "api_keys:undeprecate[prefix]"
 - **Asset Pipeline**: Propshaft with import maps (no Node.js bundler); Sprockets coexists for ActiveAdmin assets
 - **Authentication**: API Key-based auth for GraphQL endpoint (Bearer token in Authorization header)
 - **Rate Limiting**: rack-attack (100 req/min per IP; 10/hour per IP for requests without an `Authorization` header, i.e. `registerInstallation`) plus `ApiKeyRateLimiter` in `GraphqlController` (per key, `api_keys.daily_limit`, default 1000/day, counted in `Rails.cache`, resets midnight UTC). Errors carry `extensions.code` (`RATE_LIMITED`, `UNAUTHENTICATED`)
+- **Client IP**: bibleql.org is behind Cloudflare, so `request.ip` is a Cloudflare edge. Per-IP limits must use `ClientIp.for(request)` (`lib/client_ip.rb`), which trusts `CF-Connecting-IP` only from Cloudflare ranges
+- **API key request form**: Cloudflare Turnstile (`TurnstileVerifier`, on when `TURNSTILE_SITE_KEY`/`TURNSTILE_SECRET_KEY` are set, fails closed), one request per normalized inbox per 24h (`ApiKeyRequest::REQUEST_COOLDOWN`), and `API_KEY_REQUESTS_PAUSED=true` closes the form entirely
 - **Unsplash**: `unsplash` gem from the `lporras/unsplash_rb` fork (`master`; the released 3.x gem declares Ruby < 4), configured in `config/initializers/unsplash.rb`
 - **Admin Panel**: ActiveAdmin at /admin (Devise auth for AdminUser)
 - **Testing**: RSpec (not Minitest) with Capybara/Selenium for system tests
