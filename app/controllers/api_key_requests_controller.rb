@@ -1,4 +1,11 @@
 class ApiKeyRequestsController < ApplicationController
+  # Set API_KEY_REQUESTS_PAUSED=true to close the form (e.g. while a bot is flooding it and
+  # exhausting the email quota). Unset or any other value keeps the form open.
+  def self.accepting_requests?
+    !ActiveModel::Type::Boolean.new.cast(ENV["API_KEY_REQUESTS_PAUSED"])
+  end
+  helper_method def accepting_requests? = self.class.accepting_requests?
+
   def new
     @api_key_request = ApiKeyRequest.new
     set_meta_tags(
@@ -17,6 +24,11 @@ class ApiKeyRequestsController < ApplicationController
   end
 
   def create
+    unless accepting_requests?
+      @api_key_request = ApiKeyRequest.new
+      return render :new, status: :service_unavailable
+    end
+
     @api_key_request = ApiKeyRequest.new(api_key_request_params)
     @api_key_request.environment = ApiKey.expected_environment
 
