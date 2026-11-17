@@ -9,9 +9,11 @@ RSpec.describe BotApiKeyCleanup do
   end
   let(:seo_phrase) { "I would like more information. Please contact me by email — get a free bible api key." }
 
-  def approved_request(**attrs)
+  # Bot rows predate the name length validation, so long names are written past it.
+  def approved_request(name: "Bot", **attrs)
     request = create(:api_key_request, status: "pending", **attrs)
     request.approve!
+    request.update_column(:name, name)
     request.reload
   end
 
@@ -23,7 +25,7 @@ RSpec.describe BotApiKeyCleanup do
     end
   end
   let!(:real_request) { approved_request(name: "Ana", description: "Bilingual Bible study shortcuts for iPhone") }
-  let!(:rejected_spam) { create(:api_key_request, name: casino_spam, status: "rejected") }
+  let!(:rejected_spam) { create(:api_key_request, status: "rejected").tap { |r| r.update_column(:name, casino_spam) } }
   let!(:rejected_real) { create(:api_key_request, name: "Luis", status: "rejected") }
   let!(:pending_real) { create(:api_key_request, name: "Maria", description: "Church app") }
   let!(:installation_key) { create(:api_key, :installation) }

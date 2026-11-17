@@ -38,8 +38,20 @@ class ApiKeyRequestsController < ApplicationController
       return render :new, status: :unprocessable_content
     end
 
+    # Looks like a bot: keep the record for review, but no key and no email. The redirect below
+    # is the same as for a real request, so the bot can't tell it was caught.
+    spam_check = ApiKeyRequestSpamCheck.new(@api_key_request, honeypot: params[:website])
+    if spam_check.spam?
+      @api_key_request.status = "rejected"
+      @api_key_request.rejection_reason = "Flagged as spam: #{spam_check.reasons.join(', ')}"
+    end
+
     if @api_key_request.save
-      auto_approve(@api_key_request)
+      if spam_check.spam?
+        Rails.logger.info("[spam] API key request ##{@api_key_request.id} flagged: #{spam_check.reasons.join(', ')}")
+      else
+        auto_approve(@api_key_request)
+      end
       redirect_to success_api_key_requests_path(email: @api_key_request.email)
     else
       render :new, status: :unprocessable_content

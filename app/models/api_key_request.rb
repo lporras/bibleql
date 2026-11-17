@@ -3,12 +3,15 @@ class ApiKeyRequest < ApplicationRecord
   # flood someone's inbox (the approval email goes to whatever address is typed in).
   REQUEST_COOLDOWN = 24.hours
   GMAIL_DOMAINS = %w[gmail.com googlemail.com].freeze
+  NAME_MAX_LENGTH = 100
 
   belongs_to :api_key, optional: true
 
   before_validation { self.normalized_email = self.class.normalize_email(email) }
 
   validates :name, presence: true
+  # On create only, so older rows (including bot spam) can still be approved or rejected.
+  validates :name, length: { maximum: NAME_MAX_LENGTH }, on: :create
   validates :email, presence: true, format: { with: URI::MailTo::EMAIL_REGEXP }
   validates :description, presence: true
   validates :environment, presence: true, inclusion: { in: %w[live test] }

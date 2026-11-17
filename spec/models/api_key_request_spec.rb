@@ -64,6 +64,26 @@ RSpec.describe ApiKeyRequest, type: :model do
     end
   end
 
+  describe "name length" do
+    it "allows names up to #{ApiKeyRequest::NAME_MAX_LENGTH} characters" do
+      expect(build(:api_key_request, name: "a" * ApiKeyRequest::NAME_MAX_LENGTH)).to be_valid
+    end
+
+    it "rejects longer names on create" do
+      request = build(:api_key_request, name: "a" * (ApiKeyRequest::NAME_MAX_LENGTH + 1))
+      expect(request).not_to be_valid
+      expect(request.errors[:name]).to include("is too long (maximum is 100 characters)")
+    end
+
+    it "still lets an existing request with a long name be rejected" do
+      request = create(:api_key_request)
+      request.update_column(:name, "a" * 300)
+
+      expect { request.reject!("Spam") }.not_to raise_error
+      expect(request.reload.status).to eq("rejected")
+    end
+  end
+
   describe ".normalize_email" do
     it "collapses spellings that reach the same inbox" do
       expect(described_class.normalize_email(" Victim+promo@Example.COM ")).to eq("victim@example.com")

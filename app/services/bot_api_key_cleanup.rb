@@ -12,7 +12,7 @@
 class BotApiKeyCleanup
   SPAM_NAME_MIN_LENGTH = 80
   SPAM_NAME_PATTERN = 'https?://|www\.'
-  SPAM_DESCRIPTION_PREFIX = "I would like more information. Please contact me by email"
+  SPAM_DESCRIPTION_PREFIX = ApiKeyRequestSpamCheck::SEO_DESCRIPTION_PREFIX
 
   Result = Data.define(:rejected_requests, :bot_requests, :bot_keys, :used_keys)
 

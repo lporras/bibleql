@@ -127,6 +127,53 @@ RSpec.describe "API Key Requests", type: :request do
     end
   end
 
+  describe "spam check" do
+    let(:spam_params) do
+      { api_key_request: { name: "Get $3000 bonus at https://casino.example/go.php", email: "victim@example.com",
+                           description: "khmulx" } }
+    end
+
+    it "silently rejects a flagged request: same redirect, no key, no email" do
+      expect {
+        post api_key_requests_path, params: spam_params
+      }.to change(ApiKeyRequest, :count).by(1)
+        .and change(ApiKey, :count).by(0)
+        .and change { ActionMailer::Base.deliveries.count }.by(0)
+
+      expect(response).to redirect_to(success_api_key_requests_path(email: "victim@example.com"))
+      request = ApiKeyRequest.last
+      expect(request.status).to eq("rejected")
+      expect(request.rejection_reason).to eq("Flagged as spam: link in name")
+    end
+
+    it "silently rejects a request that filled the honeypot" do
+      params = { api_key_request: { name: "Jane", email: "jane@example.com", description: "Study app" },
+                 website: "anything" }
+
+      expect { post api_key_requests_path, params: params }
+        .to change { ActionMailer::Base.deliveries.count }.by(0)
+
+      expect(response).to redirect_to(success_api_key_requests_path(email: "jane@example.com"))
+      expect(ApiKeyRequest.last.rejection_reason).to eq("Flagged as spam: honeypot filled")
+    end
+
+    it "shows a form error for an overlong name, without saving or emailing" do
+      params = { api_key_request: { name: "a" * 101, email: "jane@example.com", description: "Study app" } }
+
+      expect { post api_key_requests_path, params: params }
+        .to change(ApiKeyRequest, :count).by(0)
+        .and change { ActionMailer::Base.deliveries.count }.by(0)
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(response.body).to include("Name is too long")
+    end
+
+    it "renders the honeypot field on the form" do
+      get new_api_key_request_path
+      expect(response.body).to include('name="website"')
+    end
+  end
+
   describe "per-inbox limit" do
     it "refuses a second request for the same inbox and sends only one email" do
       post api_key_requests_path, params: { api_key_request: { name: "A", email: "victim@gmail.com", description: "x" } }

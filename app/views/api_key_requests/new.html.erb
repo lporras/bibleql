@@ -18,7 +18,7 @@
 
     <div>
       <%= f.label :name, "Your name", class: "block text-sm font-medium text-gray-700" %>
-      <%= f.text_field :name, required: true,
+      <%= f.text_field :name, required: true, maxlength: ApiKeyRequest::NAME_MAX_LENGTH,
         class: "mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" %>
     </div>
 
@@ -33,6 +33,12 @@
       <%= f.text_area :description, required: true, rows: 4,
         class: "mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:ring-indigo-500",
         placeholder: "Describe your application or use case..." %>
+    </div>
+
+    <%# Honeypot: off-screen, so people never fill it in; bots that fill every field do. %>
+    <div style="position: absolute; left: -10000px;" aria-hidden="true">
+      <label for="website">Website</label>
+      <input type="text" name="website" id="website" tabindex="-1" autocomplete="off">
     </div>
 
     <% if TurnstileVerifier.enabled? %>
