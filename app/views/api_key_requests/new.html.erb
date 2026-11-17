@@ -42,7 +42,8 @@
     </div>
 
     <% if TurnstileVerifier.enabled? %>
-      <div data-controller="turnstile" data-turnstile-site-key-value="<%= TurnstileVerifier.site_key %>"></div>
+      <div data-controller="turnstile" data-turnstile-site-key-value="<%= TurnstileVerifier.site_key %>"
+           data-turnstile-action-value="<%= TurnstileVerifier::API_KEY_REQUEST_ACTION %>"></div>
     <% end %>
 
     <div>

@@ -99,10 +99,12 @@ RSpec.describe "API Key Requests", type: :request do
       get new_api_key_request_path
       expect(response.body).to include('data-controller="turnstile"')
       expect(response.body).to include("site-key-123")
+      expect(response.body).to include('data-turnstile-action-value="api_key_request"')
     end
 
     it "creates the request when the token verifies, passing the real client IP" do
-      allow(verifier).to receive(:verify).with("good-token", remote_ip: "203.0.113.7").and_return(true)
+      allow(verifier).to receive(:verify)
+        .with("good-token", action: "api_key_request", remote_ip: "203.0.113.7").and_return(true)
 
       expect {
         post api_key_requests_path,

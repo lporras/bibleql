@@ -63,7 +63,9 @@ class ApiKeyRequestsController < ApplicationController
   def human_verified?
     return true unless TurnstileVerifier.enabled?
 
-    TurnstileVerifier.new.verify(params["cf-turnstile-response"], remote_ip: ClientIp.for(request))
+    TurnstileVerifier.new.verify(params["cf-turnstile-response"],
+                                 action: TurnstileVerifier::API_KEY_REQUEST_ACTION,
+                                 remote_ip: ClientIp.for(request))
   end
 
   def auto_approve(api_key_request)
