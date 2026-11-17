@@ -58,11 +58,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_27_000001) do
   create_table "api_keys", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.integer "daily_limit", default: 1000, null: false
-    t.boolean "deprecated", default: false, null: false
     t.string "email"
     t.string "environment", default: "test", null: false
-    t.bigint "installation_id"
-    t.string "kind", default: "developer", null: false
     t.datetime "last_used_at"
     t.string "name", null: false
     t.integer "requests_count", default: 0, null: false
@@ -70,6 +67,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_27_000001) do
     t.string "token_digest", null: false
     t.string "token_prefix", limit: 12, null: false
     t.datetime "updated_at", null: false
+    t.string "kind", default: "developer", null: false
+    t.bigint "installation_id"
+    t.boolean "deprecated", default: false, null: false
     t.index ["email", "environment"], name: "index_api_keys_on_email_and_environment_active", unique: true, where: "(revoked_at IS NULL)"
     t.index ["installation_id"], name: "index_api_keys_on_installation_id"
     t.index ["kind"], name: "index_api_keys_on_kind"
@@ -102,81 +102,81 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_27_000001) do
   end
 
   create_table "concordance_word_index", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.string "lemma", null: false
-    t.integer "total_occurrences", null: false
     t.bigint "translation_id", null: false
-    t.datetime "updated_at", null: false
+    t.string "lemma", null: false
     t.integer "verse_count", null: false
+    t.integer "total_occurrences", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.index ["translation_id", "lemma"], name: "index_concordance_word_index_on_lemma_pattern", opclass: { lemma: :text_pattern_ops }
     t.index ["translation_id", "lemma"], name: "index_concordance_word_index_on_translation_id_and_lemma", unique: true
     t.index ["translation_id"], name: "index_concordance_word_index_on_translation_id"
   end
 
   create_table "installations", force: :cascade do |t|
-    t.string "app_version", null: false
-    t.datetime "created_at", null: false
     t.uuid "installation_id", null: false
-    t.datetime "last_seen_at"
     t.string "platform", null: false
+    t.string "app_version", null: false
+    t.datetime "last_seen_at"
     t.datetime "revoked_at"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["installation_id"], name: "index_installations_on_installation_id", unique: true
   end
 
   create_table "offline_packages", force: :cascade do |t|
-    t.datetime "created_at", null: false
+    t.bigint "translation_id", null: false
     t.integer "schema_version", null: false
+    t.string "storage_key", null: false
+    t.string "url", null: false
     t.string "sha256", null: false
     t.bigint "size_bytes", null: false
-    t.string "source_digest", null: false
-    t.string "storage_key", null: false
-    t.bigint "translation_id", null: false
     t.bigint "uncompressed_size_bytes", null: false
-    t.datetime "updated_at", null: false
-    t.string "url", null: false
+    t.string "source_digest", null: false
     t.integer "verse_count", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.index ["translation_id", "schema_version"], name: "index_offline_packages_on_translation_id_and_schema_version", unique: true
     t.index ["translation_id"], name: "index_offline_packages_on_translation_id"
   end
 
   create_table "solid_queue_blocked_executions", force: :cascade do |t|
-    t.string "concurrency_key", null: false
-    t.datetime "created_at", null: false
-    t.datetime "expires_at", null: false
     t.bigint "job_id", null: false
-    t.integer "priority", default: 0, null: false
     t.string "queue_name", null: false
+    t.integer "priority", default: 0, null: false
+    t.string "concurrency_key", null: false
+    t.datetime "expires_at", null: false
+    t.datetime "created_at", null: false
     t.index ["concurrency_key", "priority", "job_id"], name: "index_solid_queue_blocked_executions_for_release"
     t.index ["expires_at", "concurrency_key"], name: "index_solid_queue_blocked_executions_for_maintenance"
     t.index ["job_id"], name: "index_solid_queue_blocked_executions_on_job_id", unique: true
   end
 
   create_table "solid_queue_claimed_executions", force: :cascade do |t|
-    t.datetime "created_at", null: false
     t.bigint "job_id", null: false
     t.bigint "process_id"
+    t.datetime "created_at", null: false
     t.index ["job_id"], name: "index_solid_queue_claimed_executions_on_job_id", unique: true
     t.index ["process_id", "job_id"], name: "index_solid_queue_claimed_executions_on_process_id_and_job_id"
   end
 
   create_table "solid_queue_failed_executions", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.text "error"
     t.bigint "job_id", null: false
+    t.text "error"
+    t.datetime "created_at", null: false
     t.index ["job_id"], name: "index_solid_queue_failed_executions_on_job_id", unique: true
   end
 
   create_table "solid_queue_jobs", force: :cascade do |t|
-    t.string "active_job_id"
-    t.text "arguments"
+    t.string "queue_name", null: false
     t.string "class_name", null: false
+    t.text "arguments"
+    t.integer "priority", default: 0, null: false
+    t.string "active_job_id"
+    t.datetime "scheduled_at"
+    t.datetime "finished_at"
     t.string "concurrency_key"
     t.datetime "created_at", null: false
-    t.datetime "finished_at"
-    t.integer "priority", default: 0, null: false
-    t.string "queue_name", null: false
-    t.datetime "scheduled_at"
     t.datetime "updated_at", null: false
     t.index ["active_job_id"], name: "index_solid_queue_jobs_on_active_job_id"
     t.index ["class_name"], name: "index_solid_queue_jobs_on_class_name"
@@ -186,94 +186,94 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_27_000001) do
   end
 
   create_table "solid_queue_pauses", force: :cascade do |t|
-    t.datetime "created_at", null: false
     t.string "queue_name", null: false
+    t.datetime "created_at", null: false
     t.index ["queue_name"], name: "index_solid_queue_pauses_on_queue_name", unique: true
   end
 
   create_table "solid_queue_processes", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.string "hostname"
     t.string "kind", null: false
     t.datetime "last_heartbeat_at", null: false
-    t.text "metadata"
-    t.string "name", null: false
-    t.integer "pid", null: false
     t.bigint "supervisor_id"
+    t.integer "pid", null: false
+    t.string "hostname"
+    t.text "metadata"
+    t.datetime "created_at", null: false
+    t.string "name", null: false
     t.index ["last_heartbeat_at"], name: "index_solid_queue_processes_on_last_heartbeat_at"
     t.index ["name", "supervisor_id"], name: "index_solid_queue_processes_on_name_and_supervisor_id", unique: true
     t.index ["supervisor_id"], name: "index_solid_queue_processes_on_supervisor_id"
   end
 
   create_table "solid_queue_ready_executions", force: :cascade do |t|
-    t.datetime "created_at", null: false
     t.bigint "job_id", null: false
-    t.integer "priority", default: 0, null: false
     t.string "queue_name", null: false
+    t.integer "priority", default: 0, null: false
+    t.datetime "created_at", null: false
     t.index ["job_id"], name: "index_solid_queue_ready_executions_on_job_id", unique: true
     t.index ["priority", "job_id"], name: "index_solid_queue_poll_all"
     t.index ["queue_name", "priority", "job_id"], name: "index_solid_queue_poll_by_queue"
   end
 
   create_table "solid_queue_recurring_executions", force: :cascade do |t|
-    t.datetime "created_at", null: false
     t.bigint "job_id", null: false
-    t.datetime "run_at", null: false
     t.string "task_key", null: false
+    t.datetime "run_at", null: false
+    t.datetime "created_at", null: false
     t.index ["job_id"], name: "index_solid_queue_recurring_executions_on_job_id", unique: true
     t.index ["task_key", "run_at"], name: "index_solid_queue_recurring_executions_on_task_key_and_run_at", unique: true
   end
 
   create_table "solid_queue_recurring_tasks", force: :cascade do |t|
-    t.text "arguments"
-    t.string "class_name"
-    t.string "command", limit: 2048
-    t.datetime "created_at", null: false
-    t.text "description"
     t.string "key", null: false
-    t.integer "priority", default: 0
-    t.string "queue_name"
     t.string "schedule", null: false
+    t.string "command", limit: 2048
+    t.string "class_name"
+    t.text "arguments"
+    t.string "queue_name"
+    t.integer "priority", default: 0
     t.boolean "static", default: true, null: false
+    t.text "description"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["key"], name: "index_solid_queue_recurring_tasks_on_key", unique: true
     t.index ["static"], name: "index_solid_queue_recurring_tasks_on_static"
   end
 
   create_table "solid_queue_scheduled_executions", force: :cascade do |t|
-    t.datetime "created_at", null: false
     t.bigint "job_id", null: false
-    t.integer "priority", default: 0, null: false
     t.string "queue_name", null: false
+    t.integer "priority", default: 0, null: false
     t.datetime "scheduled_at", null: false
+    t.datetime "created_at", null: false
     t.index ["job_id"], name: "index_solid_queue_scheduled_executions_on_job_id", unique: true
     t.index ["scheduled_at", "priority", "job_id"], name: "index_solid_queue_dispatch_all"
   end
 
   create_table "solid_queue_semaphores", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.datetime "expires_at", null: false
     t.string "key", null: false
-    t.datetime "updated_at", null: false
     t.integer "value", default: 1, null: false
+    t.datetime "expires_at", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.index ["expires_at"], name: "index_solid_queue_semaphores_on_expires_at"
     t.index ["key", "value"], name: "index_solid_queue_semaphores_on_key_and_value"
     t.index ["key"], name: "index_solid_queue_semaphores_on_key", unique: true
   end
 
   create_table "translations", force: :cascade do |t|
-    t.string "abbrev"
-    t.datetime "concordance_indexed_at"
     t.datetime "created_at", null: false
-    t.boolean "has_stemming", default: false, null: false
     t.string "identifier", null: false
     t.string "language", null: false
-    t.string "language_name"
     t.string "name", null: false
     t.text "note"
-    t.boolean "offline_downloadable", default: false, null: false
-    t.string "text_search_config", default: "simple", null: false
     t.datetime "updated_at", null: false
+    t.string "abbrev"
+    t.string "language_name"
+    t.string "text_search_config", default: "simple", null: false
+    t.boolean "has_stemming", default: false, null: false
+    t.datetime "concordance_indexed_at"
+    t.boolean "offline_downloadable", default: false, null: false
     t.index ["identifier"], name: "index_translations_on_identifier", unique: true
     t.index ["language"], name: "index_translations_on_language"
   end
@@ -284,10 +284,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_27_000001) do
     t.datetime "created_at", null: false
     t.vector "embedding", limit: 256
     t.text "text", null: false
-    t.tsvector "text_search"
     t.bigint "translation_id", null: false
     t.datetime "updated_at", null: false
     t.integer "verse_number", null: false
+    t.tsvector "text_search"
     t.index ["book_id"], name: "index_verses_on_book_id"
     t.index ["embedding"], name: "index_verses_on_embedding", opclass: :vector_cosine_ops, using: :hnsw
     t.index ["text_search"], name: "index_verses_on_text_search", using: :gin
